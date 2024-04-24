@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./thoughts_app_service
+    command: /bin/sh -c "python ./thoughts_app_service/thoughts_app/manage.py migrate && python ./thoughts_app_service/thoughts_app/manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres_db
+    networks:
+      - default
+
+  postgres_db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+    networks:
+      - default
+
+  prometheus:
+    image: prom/prometheus
+    restart: 'no'
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - default
+
+  grafana:
+    image: grafana/grafana
+    environment:
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource"
+    restart: 'no'
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+    networks:
+      - default
+
+volumes:
+  postgres_data: {}
+  prometheus_data: {}
+  grafana_data: {}
+  mongodb_data: {}
+
+networks:
+  default:
