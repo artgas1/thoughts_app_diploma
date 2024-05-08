@@ -12,5 +12,12 @@ WORKDIR /code
 COPY requirements.txt /code/
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN apt-get update && apt-get install -y postgresql-client
+
 # Add the current directory . in the project to the working directory /code
 COPY . /code/
+
+RUN chmod +x /code/initialize_db.sh
+
+# Set the command to run the entrypoint script
+CMD ["/code/initialize_db.sh"]

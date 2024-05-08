@@ -46,8 +46,8 @@ class Meditation(models.Model):
     meditation_narrator_id = models.ForeignKey(
         to=MeditationNarrator, on_delete=models.SET_NULL, null=True
     )
-    audio_file_name = models.CharField(max_length=255)
-    cover_file_name = models.CharField(max_length=255)
+    audio_file_name = models.URLField()
+    cover_file_name = models.URLField()
 
     def __str__(self):
         return f"Meditation: {self.name}"

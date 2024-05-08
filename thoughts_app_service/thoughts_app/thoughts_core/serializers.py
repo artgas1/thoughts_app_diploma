@@ -43,6 +43,13 @@ class AchievementSerializer(serializers.ModelSerializer):
 
 
 class MeditationSerializer(serializers.ModelSerializer):
+    user_grade = serializers.SerializerMethodField()
+
+    def get_user_grade(self, obj):
+        user = self.context["request"].user
+        grade = MeditationGrade.objects.filter(user_id=user, meditation_id=obj).first()
+        return grade.grade if grade else None
+    
     class Meta:
         model = Meditation
         fields = "__all__"

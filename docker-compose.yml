@@ -3,9 +3,8 @@ version: '3.8'
 services:
   web:
     build: ./thoughts_app_service
-    command: /bin/sh -c "python ./thoughts_app_service/thoughts_app/manage.py migrate && python ./thoughts_app_service/thoughts_app/manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/code
+    env_file:
+      - ./thoughts_app_service/.env
     ports:
       - 8000:8000
     depends_on:
