@@ -49,7 +49,7 @@ class MeditationSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         grade = MeditationGrade.objects.filter(user_id=user, meditation_id=obj).first()
         return grade.grade if grade else None
-    
+
     class Meta:
         model = Meditation
         fields = "__all__"
@@ -68,9 +68,14 @@ class MeditationGradeSerializer(serializers.ModelSerializer):
 
 
 class MeditationSessionSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        user = self.context["request"].user
+        user = User.objects.get(id=user.id)
+        return MeditationSession.objects.create(user=user, **validated_data)
+
     class Meta:
         model = MeditationSession
-        fields = "__all__"
+        exclude = ['user']
 
 
 class MeditationNarratorSerializer(serializers.ModelSerializer):
@@ -89,12 +94,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ["email", "password"]
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            username=validated_data['email'].split('@')[0],
-            email=validated_data['email'],
-            password=validated_data['password']
+            username=validated_data["email"].split("@")[0],
+            email=validated_data["email"],
+            password=validated_data["password"],
         )
         return user

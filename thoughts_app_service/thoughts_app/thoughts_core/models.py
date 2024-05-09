@@ -6,7 +6,7 @@ import uuid
 
 class Achievement(models.Model):
     name = models.CharField(max_length=255)
-    cover_file_name = models.CharField(max_length=255)
+    cover_file_url = models.URLField()
     description = models.TextField()
 
     def __str__(self):
@@ -17,15 +17,25 @@ class UserInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20)
-    achievements = models.ManyToManyField(Achievement, blank=True)
+    achievements = models.ManyToManyField(Achievement, through='UserAchievement', blank=True)
 
     def __str__(self):
         return f'UserInfo: {self.name}'
+    
+class UserAchievement(models.Model):
+    user_info = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user_info', 'achievement')  # Ensuring uniqueness
+
+    def __str__(self):
+        return f'{self.user_info} - {self.achievement}'
 
 
 class MeditationTheme(models.Model):
     name = models.CharField(max_length=255)
-    cover_file_name = models.CharField(max_length=255)
+    cover_file_url = models.URLField()
 
     def __str__(self):
         return f'Meditation theme: {self.name}'
@@ -40,33 +50,32 @@ class MeditationNarrator(models.Model):
 
 class Meditation(models.Model):
     name = models.CharField(max_length=255)
-    meditation_theme_id = models.ForeignKey(
-        to=MeditationTheme, on_delete=models.SET_NULL, null=True
+    meditation_theme = models.ForeignKey(
+        MeditationTheme, on_delete=models.SET_NULL, null=True
     )
-    meditation_narrator_id = models.ForeignKey(
-        to=MeditationNarrator, on_delete=models.SET_NULL, null=True
+    meditation_narrator = models.ForeignKey(
+        MeditationNarrator, on_delete=models.SET_NULL, null=True
     )
-    audio_file_name = models.URLField()
-    cover_file_name = models.URLField()
+    audio_file_url = models.URLField()
+    cover_file_url = models.URLField()
 
     def __str__(self):
         return f"Meditation: {self.name}"
 
 
 class MeditationSession(models.Model):
-    user_id = models.ForeignKey(to=UserInfo, on_delete=models.CASCADE)
-    meditation_id = models.ForeignKey(to=Meditation, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    meditation = models.ForeignKey(Meditation, on_delete=models.CASCADE)
     session_start_time = models.DateTimeField(auto_now_add=True)
-    end_session = models.DateTimeField(null=True)
 
 
 class MeditationGrade(models.Model):
-    user_id = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
-    meditation_id = models.ForeignKey(to=Meditation, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    meditation = models.ForeignKey(Meditation, on_delete=models.CASCADE)
     grade = models.IntegerField()
 
     def __str__(self):
-        return f'MeditationGrade from {self.user_id} for {self.meditation_id} = {self.grade}'
+        return f'MeditationGrade from {self.user} for {self.meditation} = {self.grade}'
 
 
 class Chat(models.Model):

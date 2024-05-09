@@ -36,7 +36,7 @@ from .serializers import (
     MeditationThemeSerializer,
     MeditationGradeSerializer,
     MeditationSessionSerializer,
-    UserRegistrationSerializer
+    UserRegistrationSerializer,
 )
 
 from adrf.views import APIView as AsyncAPIView
@@ -60,7 +60,9 @@ class OpenAiClientSingleton:
         return self.client
 
 
-class UserInfoViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class UserInfoViewSet(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
+):
     serializer_class = UserInfoSerializer
     queryset = UserInfo.objects.all()
 
@@ -81,14 +83,16 @@ class MeditationViewSet(viewsets.ModelViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'file': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY),
-                'name': openapi.Schema(type=openapi.TYPE_STRING),
-                'meditation_theme_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                'meditation_narrator_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                'cover_file_name': openapi.Schema(type=openapi.TYPE_STRING),
-            }
+                "file": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY
+                ),
+                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                "meditation_theme_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "meditation_narrator_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "cover_file_name": openapi.Schema(type=openapi.TYPE_STRING),
+            },
         ),
-        consumes=['multipart/form-data'],
+        consumes=["multipart/form-data"],
         responses={
             200: MeditationSerializer,
             400: "Bad request",
@@ -96,21 +100,23 @@ class MeditationViewSet(viewsets.ModelViewSet):
         },
     )
     def create(self, request, *args, **kwargs):
-        if 'file' not in request.data:
-            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+        if "file" not in request.data:
+            return Response(
+                {"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         meditation_data = {
-            'name': request.data.get('name'),
-            'meditation_theme_id': request.data.get('meditation_theme_id'),
-            'meditation_narrator_id': request.data.get('meditation_narrator_id'),
-            'audio_file_name': "default_file_name",
-            'cover_file_name': request.data.get('cover_file_name'),
+            "name": request.data.get("name"),
+            "meditation_theme_id": request.data.get("meditation_theme_id"),
+            "meditation_narrator_id": request.data.get("meditation_narrator_id"),
+            "audio_file_name": "default_file_name",
+            "cover_file_name": request.data.get("cover_file_name"),
         }
 
         serializer = MeditationSerializer(data=meditation_data)
         if serializer.is_valid():
             serializer.save()
-            uploaded_file = request.data['file']
+            uploaded_file = request.data["file"]
 
             new_file_name = str(serializer.instance.id) + "_meditation"
             uploaded_file.name = new_file_name
@@ -126,15 +132,15 @@ class MeditationViewSet(viewsets.ModelViewSet):
         audio_file = S3Service.get_file(key=instance.audio_file_name)
 
         response_data = {
-            'name': instance.name,
-            'meditation_theme_id': instance.meditation_theme_id,
-            'meditation_narrator_id': instance.meditation_narrator_id,
-            'audio_file_name': instance.audio_file_name,
-            'cover_file_name': instance.cover_file_name,
+            "name": instance.name,
+            "meditation_theme_id": instance.meditation_theme_id,
+            "meditation_narrator_id": instance.meditation_narrator_id,
+            "audio_file_name": instance.audio_file_name,
+            "cover_file_name": instance.cover_file_name,
         }
 
-        response = HttpResponse(audio_file, content_type='application/octet-stream')
-        response['Content-Disposition'] = 'attachment; filename="audio_file.mp3"'
+        response = HttpResponse(audio_file, content_type="application/octet-stream")
+        response["Content-Disposition"] = 'attachment; filename="audio_file.mp3"'
         for key, value in response_data.items():
             response[key] = value
 
@@ -151,16 +157,13 @@ class MeditationGradeViewSet(viewsets.ModelViewSet):
     queryset = MeditationGrade.objects.all()
 
 
-class MeditationSessionViewSet(viewsets.ModelViewSet):
+class MeditationSessionViewSet(
+    mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
+):
     serializer_class = MeditationSessionSerializer
-    queryset = MeditationSession.objects.all()
 
-    @action(detail=True, methods=["post"], url_path="end")
-    def end_session(self, request):
-        meditation_session = self.get_object()
-        MeditationService.end_meditation_session(meditation_session=meditation_session)
-        serializer = self.get_serializer(meditation_session)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return MeditationSession.objects.filter(user_id=self.request.user)
 
 
 class MeditationNarratorViewSet(viewsets.ModelViewSet):
@@ -288,16 +291,17 @@ class RecommendMeditationsApiView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        responses={
-            200: MeditationSerializer(many=True),
-            400: "Bad request"
-        },
+        responses={200: MeditationSerializer(many=True), 400: "Bad request"},
     )
     def get(self, request):
         user = self.request.user
 
-        recommended_meditations = RecommendationService.recommend_meditations_for_user(user=user.userinfo)
-        serialized_meditations = MeditationSerializer(recommended_meditations, many=True)
+        recommended_meditations = RecommendationService.recommend_meditations_for_user(
+            user=user.userinfo
+        )
+        serialized_meditations = MeditationSerializer(
+            recommended_meditations, many=True
+        )
 
         return Response(serialized_meditations.data)
 
@@ -306,10 +310,7 @@ class UserRegistrationView(APIView):
 
     @swagger_auto_schema(
         request_body=UserRegistrationSerializer,
-        responses={
-            200: UserRegistrationSerializer,
-            400: "Bad request"
-        },
+        responses={200: UserRegistrationSerializer, 400: "Bad request"},
     )
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
