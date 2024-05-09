@@ -87,3 +87,11 @@ class Chat(models.Model):
     chat_messages = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
+    
+
+class ProgressLevel(models.Model):
+    level = models.IntegerField()
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"UserLevel: {self.level} - {self.name}"

@@ -9,6 +9,7 @@ from .models import (
     User,
     Chat,
     UserInfo,
+    ProgressLevel,
 )
 from adrf.serializers import Serializer as AsyncSerializer
 
@@ -44,6 +45,12 @@ class AchievementSerializer(serializers.ModelSerializer):
 
 class MeditationSerializer(serializers.ModelSerializer):
     user_grade = serializers.SerializerMethodField()
+    user_sessions = serializers.SerializerMethodField()
+
+    def get_user_sessions(self, obj):
+        user = self.context["request"].user
+        sessions = MeditationSession.objects.filter(user_id=user, meditation_id=obj)
+        return MeditationSessionSerializer(sessions, many=True).data
 
     def get_user_grade(self, obj):
         user = self.context["request"].user
@@ -75,7 +82,7 @@ class MeditationSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MeditationSession
-        exclude = ['user']
+        exclude = ["user"]
 
 
 class MeditationNarratorSerializer(serializers.ModelSerializer):
@@ -103,3 +110,26 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
         )
         return user
+
+
+class MeditationProgressSerializer(serializers.Serializer):
+    user_level = serializers.SerializerMethodField()
+    progress_bar = serializers.SerializerMethodField()
+
+    def get_user_level(self, obj):
+        user = self.context["request"].user
+        sessions_count = len(MeditationSession.objects.filter(user_id=user))
+        progress_levels = ProgressLevel.objects.all().order_by("level")
+        for i in range(len(progress_levels)):
+            if sessions_count < progress_levels[i].level:
+                return progress_levels[i]
+        return progress_levels.last()
+    
+    def get_progress_bar(self, obj):
+        user = self.context["request"].user
+        sessions_count = len(MeditationSession.objects.filter(user_id=user))
+        progress_levels = ProgressLevel.objects.all().order_by("level")
+        for i in range(len(progress_levels)):
+            if sessions_count < progress_levels[i].level:
+                return sessions_count / progress_levels[i].level
+        return 1

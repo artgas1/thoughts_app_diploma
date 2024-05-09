@@ -36,6 +36,7 @@ from .serializers import (
     MeditationGradeSerializer,
     MeditationSessionSerializer,
     UserRegistrationSerializer,
+    MeditationProgressSerializer,
 )
 
 from adrf.views import APIView as AsyncAPIView
@@ -61,48 +62,20 @@ class OpenAiClientSingleton:
         return self.client
 
 
-# class UserInfoViewSet(
-#     mixins.UpdateModelMixin,
-#     viewsets.GenericViewSet,
-# ):
-#     authentication_classes = [SessionAuthentication, TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = UserInfoSerializer
-
-#     def get_queryset(self):
-#         return UserInfo.objects.filter(user=self.request.user)
-
-#     @action(detail=False, methods=["get"])
-#     def whoami(self, request):
-#         """
-#         Custom endpoint to retrieve the UserInfo instance for the currently logged-in user.
-#         """
-#         # Get the user's UserInfo instance. It assumes that user has a userinfo relationship.
-#         # Adjust the related name or direct relationship access accordingly.
-#         user_info = self.get_queryset().filter(user=request.user).first()
-#         if not user_info:
-#             return Response({"error": "UserInfo not found for the user."}, status=404)
-
-#         # Use the serializer to return the UserInfo data
-#         serializer = self.get_serializer(user_info)
-#         return Response(serializer.data)
-
 class UserInfoView(RetrieveUpdateAPIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = UserInfoSerializer
 
     def get_object(self):
-        """
-        Override the `get_object` method to return the UserInfo instance for the currently logged-in user.
-        """
         try:
-            return UserInfo.objects.filter(user=self.request.user).first() # Adjust this depending on your related name
+            return UserInfo.objects.filter(
+                user=self.request.user
+            ).first()  # Adjust this depending on your related name
         except UserInfo.DoesNotExist:
             # Properly handle the case where the UserInfo does not exist
             raise Http404("No UserInfo found for this user.")
-
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
@@ -361,21 +334,20 @@ class UserRegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class MeditationProgressView(AsyncAPIView):
-#     authentication_classes = [SessionAuthentication, TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = MeditationProgressRequestSerializer
+class MeditationProgressView(AsyncAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = MeditationProgressSerializer
 
-#     @swagger_auto_schema(
-#         request_body=GetReplySerializerRequest,
-#         responses={
-#             200: openapi.Schema(
-#                 type=MeditationProgressResponseSerializer,
-#                 description="Response message",
-#             ),
-#             400: "Bad request",
-#             404: "Chat not found",
-#         },
-#     )
-#     async def post(self, request):
-#         pass
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Schema(
+                type=MeditationProgressSerializer,
+                description="Returns user level and user progress to next level",
+            ),
+            400: "Bad request",
+        },
+    )
+    async def post(self, request):
+        serializer = MeditationProgressSerializer()
+        return Response(serializer.data)

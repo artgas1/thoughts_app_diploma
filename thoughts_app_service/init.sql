@@ -51,8 +51,9 @@ BEGIN
         -- Insert sample data into Meditation table
         INSERT INTO thoughts_core_meditation (name, meditation_theme_id, meditation_narrator_id, audio_file_url, cover_file_url)
         VALUES
-        ('Deep Relaxation', (SELECT id FROM thoughts_core_meditationtheme WHERE name='Relaxation'), (SELECT id FROM thoughts_core_meditationnarrator WHERE name='Alice Wonder'), 'http://example.com/deep_relaxation.mp3', 'http://example.com/deep_relaxation_cover.jpg'),
-        ('Daily Focus', (SELECT id FROM thoughts_core_meditationtheme WHERE name='Focus'), (SELECT id FROM thoughts_core_meditationnarrator WHERE name='Bob Smith'), 'http://example.com/daily_focus.mp3', 'http://example.com/daily_focus_cover.jpg');
+        ('Deep Relaxation', (SELECT id FROM thoughts_core_meditationtheme WHERE name='Relaxation'), (SELECT id FROM thoughts_core_meditationnarrator WHERE name='Alice Wonder'), 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/meditations/moonlight.mp3', 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/covers/cover-1.png'),
+        ('Daily Focus', (SELECT id FROM thoughts_core_meditationtheme WHERE name='Focus'), (SELECT id FROM thoughts_core_meditationnarrator WHERE name='Bob Smith'), 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/meditations/melody-of-nature-main.mp3', 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/covers/cover-2.png'),
+        ('Morning Meditation', (SELECT id FROM thoughts_core_meditationtheme WHERE name='Relaxation'), (SELECT id FROM thoughts_core_meditationnarrator WHERE name='Alice Wonder'), 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/meditations/sad-music.mp3', 'https://s3.timeweb.cloud/ef8b55e8-thoughts-app/covers/cover-3.png');
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM thoughts_core_meditationsession WHERE user_id = (SELECT id FROM auth_user WHERE username='john_doe') AND meditation_id = (SELECT id FROM thoughts_core_meditation WHERE name='Deep Relaxation') AND session_start_time = '2023-05-09 09:00:00') THEN
@@ -93,5 +94,14 @@ BEGIN
         ((SELECT id FROM thoughts_core_userinfo WHERE name='Admin'), (SELECT id FROM thoughts_core_achievement WHERE name='Mindful Mastery')),
         ((SELECT id FROM thoughts_core_userinfo WHERE name='Admin'), (SELECT id FROM thoughts_core_achievement WHERE name='Zen Peak')),
         ((SELECT id FROM thoughts_core_userinfo WHERE name='Admin'), (SELECT id FROM thoughts_core_achievement WHERE name='Advanced Mindfulness'));
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM thoughts_core_progresslevel) THEN
+        -- Assign the new achievement to John and Jane
+        insert into thoughts_core_progresslevel (name, level)
+        values
+        ('Новичок', 1),
+        ('Любитель', 5),
+        ('Эксперт', 10);
     END IF;
 END $$;
