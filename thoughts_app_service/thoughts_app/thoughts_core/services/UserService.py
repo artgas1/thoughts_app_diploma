@@ -5,13 +5,12 @@ from ..repositories.AchievementRepository import AchievementRepository
 
 
 class UserService:
-
     @staticmethod
-    def create_user_info(user: User, name: str = "", phone_number: str = "") -> UserInfo:
+    def create_user_info(
+        user: User, name: str = "", phone_number: str = ""
+    ) -> UserInfo:
         return UserRepository.create_user(
-            user=user,
-            name=name,
-            phone_number=phone_number
+            user=user, name=name, phone_number=phone_number
         )
 
     @staticmethod

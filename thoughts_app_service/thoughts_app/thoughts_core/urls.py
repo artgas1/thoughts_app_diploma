@@ -12,7 +12,7 @@ from .views import (
     ManageUserAchievements,
     RecommendMeditationsApiView,
     UserRegistrationView,
-    UserInfoViewSet
+    UserInfoViewSet,
 )
 
 router = routers.SimpleRouter()
@@ -48,8 +48,12 @@ urlpatterns = [
         {"action": "remove"},
         name="remove_achievement_from_user",
     ),
-    path('meditation/recomendate_meditations/', RecommendMeditationsApiView.as_view(), name='recomendate_meditations'),
+    path(
+        "meditation/recomendate_meditations/",
+        RecommendMeditationsApiView.as_view(),
+        name="recomendate_meditations",
+    ),
     path("", include(router.urls)),
     path("chatbot/", ChatBotAPIView.as_view(), name="chatbot"),
-    path('auth/register/', UserRegistrationView.as_view(), name='user_registration')
+    path("auth/register/", UserRegistrationView.as_view(), name="user_registration"),
 ]

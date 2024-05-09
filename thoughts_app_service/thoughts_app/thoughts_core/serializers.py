@@ -75,7 +75,7 @@ class MeditationSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MeditationSession
-        exclude = ['user']
+        exclude = ["user"]
 
 
 class MeditationNarratorSerializer(serializers.ModelSerializer):

@@ -10,27 +10,30 @@ class Achievement(models.Model):
     description = models.TextField()
 
     def __str__(self):
-        return f'Achievement: {self.name}'
+        return f"Achievement: {self.name}"
 
 
 class UserInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20)
-    achievements = models.ManyToManyField(Achievement, through='UserAchievement', blank=True)
+    achievements = models.ManyToManyField(
+        Achievement, through="UserAchievement", blank=True
+    )
 
     def __str__(self):
-        return f'UserInfo: {self.name}'
-    
+        return f"UserInfo: {self.name}"
+
+
 class UserAchievement(models.Model):
     user_info = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('user_info', 'achievement')  # Ensuring uniqueness
+        unique_together = ("user_info", "achievement")  # Ensuring uniqueness
 
     def __str__(self):
-        return f'{self.user_info} - {self.achievement}'
+        return f"{self.user_info} - {self.achievement}"
 
 
 class MeditationTheme(models.Model):
@@ -38,14 +41,14 @@ class MeditationTheme(models.Model):
     cover_file_url = models.URLField()
 
     def __str__(self):
-        return f'Meditation theme: {self.name}'
+        return f"Meditation theme: {self.name}"
 
 
 class MeditationNarrator(models.Model):
     name = models.CharField(max_length=255)
 
     def __str__(self):
-        return f'MeditationNarrator: {self.name}'
+        return f"MeditationNarrator: {self.name}"
 
 
 class Meditation(models.Model):
@@ -75,7 +78,7 @@ class MeditationGrade(models.Model):
     grade = models.IntegerField()
 
     def __str__(self):
-        return f'MeditationGrade from {self.user} for {self.meditation} = {self.grade}'
+        return f"MeditationGrade from {self.user} for {self.meditation} = {self.grade}"
 
 
 class Chat(models.Model):

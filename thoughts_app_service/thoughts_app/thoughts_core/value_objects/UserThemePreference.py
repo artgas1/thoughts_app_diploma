@@ -13,4 +13,3 @@ class UserThemePreference:
             self.theme_to_grades[meditation_theme].append(grade)
         else:
             self.theme_to_grades[meditation_theme] = [grade]
-

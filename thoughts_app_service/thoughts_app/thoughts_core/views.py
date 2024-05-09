@@ -10,7 +10,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from .services.MeditationService import MeditationService
 from .services.RecommendationService import RecommendationService
 from .services.S3Service import S3Service
 from .services.UserService import UserService
@@ -43,6 +42,7 @@ from adrf.views import APIView as AsyncAPIView
 from rest_framework.views import APIView
 
 from .services.logger import logger
+from rest_framework.response import Response
 
 
 class OpenAiClientSingleton:
@@ -61,13 +61,30 @@ class OpenAiClientSingleton:
 
 
 class UserInfoViewSet(
-    viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
 ):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserInfoSerializer
-    queryset = UserInfo.objects.all()
 
     def get_queryset(self):
         return UserInfo.objects.filter(user=self.request.user)
+
+    @action(detail=False, methods=["get"])
+    def whoami(self, request):
+        """
+        Custom endpoint to retrieve the UserInfo instance for the currently logged-in user.
+        """
+        # Get the user's UserInfo instance. It assumes that user has a userinfo relationship.
+        # Adjust the related name or direct relationship access accordingly.
+        user_info = self.get_queryset().filter(user=request.user).first()
+        if not user_info:
+            return Response({"error": "UserInfo not found for the user."}, status=404)
+
+        # Use the serializer to return the UserInfo data
+        serializer = self.get_serializer(user_info)
+        return Response(serializer.data)
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
@@ -154,11 +171,16 @@ class MeditationThemeViewSet(viewsets.ModelViewSet):
 
 class MeditationGradeViewSet(viewsets.ModelViewSet):
     serializer_class = MeditationGradeSerializer
-    queryset = MeditationGrade.objects.all()
+
+    def get_queryset(self):
+        return MeditationGrade.objects.filter(user_id=self.request.user)
 
 
 class MeditationSessionViewSet(
-    mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
 ):
     serializer_class = MeditationSessionSerializer
 
@@ -307,7 +329,6 @@ class RecommendMeditationsApiView(APIView):
 
 
 class UserRegistrationView(APIView):
-
     @swagger_auto_schema(
         request_body=UserRegistrationSerializer,
         responses={200: UserRegistrationSerializer, 400: "Bad request"},
@@ -320,3 +341,23 @@ class UserRegistrationView(APIView):
             UserService.create_user_info(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class MeditationProgressView(AsyncAPIView):
+#     authentication_classes = [SessionAuthentication, TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = MeditationProgressRequestSerializer
+
+#     @swagger_auto_schema(
+#         request_body=GetReplySerializerRequest,
+#         responses={
+#             200: openapi.Schema(
+#                 type=MeditationProgressResponseSerializer,
+#                 description="Response message",
+#             ),
+#             400: "Bad request",
+#             404: "Chat not found",
+#         },
+#     )
+#     async def post(self, request):
+#         pass

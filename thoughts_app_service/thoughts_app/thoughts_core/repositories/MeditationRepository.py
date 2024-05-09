@@ -102,7 +102,7 @@ class MeditationRepository:
 
     @staticmethod
     def get_meditations_by_meditation_theme(
-        meditation_theme: MeditationTheme
+        meditation_theme: MeditationTheme,
     ) -> List[Meditation]:
         return Meditation.objects.filter(meditation_theme_id=meditation_theme)
 

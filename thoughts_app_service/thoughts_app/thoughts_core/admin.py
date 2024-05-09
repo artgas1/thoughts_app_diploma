@@ -8,7 +8,7 @@ from .models import (
     MeditationTheme,
     Meditation,
     Chat,
-    UserInfo
+    UserInfo,
 )
 
 admin.site.register(UserInfo)
