@@ -12,14 +12,13 @@ from .views import (
     ManageUserAchievements,
     RecommendMeditationsApiView,
     UserRegistrationView,
-    UserInfoViewSet,
+    UserInfoView,
 )
 
 router = routers.SimpleRouter()
 
 router.register(r"chat", ChatViewSet, basename="chat")
 
-router.register(r"users", UserInfoViewSet, basename="users")
 router.register(r"achievement", AchievementViewSet, basename="achievement")
 router.register(r"meditation", MeditationViewSet, basename="meditation")
 router.register(
@@ -56,4 +55,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("chatbot/", ChatBotAPIView.as_view(), name="chatbot"),
     path("auth/register/", UserRegistrationView.as_view(), name="user_registration"),
+    path("user_info/", UserInfoView.as_view(), name="user_info"),
 ]

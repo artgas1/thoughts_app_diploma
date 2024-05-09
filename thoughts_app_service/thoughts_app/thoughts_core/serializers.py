@@ -33,7 +33,7 @@ class ChatSerializer(serializers.Serializer):
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = "__all__"
+        exclude = ["id", "user"]
 
 
 class AchievementSerializer(serializers.ModelSerializer):
@@ -75,7 +75,7 @@ class MeditationSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MeditationSession
-        exclude = ["user"]
+        exclude = ['user']
 
 
 class MeditationNarratorSerializer(serializers.ModelSerializer):

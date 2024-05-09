@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -43,6 +43,7 @@ from rest_framework.views import APIView
 
 from .services.logger import logger
 from rest_framework.response import Response
+from rest_framework.generics import RetrieveUpdateAPIView
 
 
 class OpenAiClientSingleton:
@@ -60,31 +61,48 @@ class OpenAiClientSingleton:
         return self.client
 
 
-class UserInfoViewSet(
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
+# class UserInfoViewSet(
+#     mixins.UpdateModelMixin,
+#     viewsets.GenericViewSet,
+# ):
+#     authentication_classes = [SessionAuthentication, TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = UserInfoSerializer
+
+#     def get_queryset(self):
+#         return UserInfo.objects.filter(user=self.request.user)
+
+#     @action(detail=False, methods=["get"])
+#     def whoami(self, request):
+#         """
+#         Custom endpoint to retrieve the UserInfo instance for the currently logged-in user.
+#         """
+#         # Get the user's UserInfo instance. It assumes that user has a userinfo relationship.
+#         # Adjust the related name or direct relationship access accordingly.
+#         user_info = self.get_queryset().filter(user=request.user).first()
+#         if not user_info:
+#             return Response({"error": "UserInfo not found for the user."}, status=404)
+
+#         # Use the serializer to return the UserInfo data
+#         serializer = self.get_serializer(user_info)
+#         return Response(serializer.data)
+
+class UserInfoView(RetrieveUpdateAPIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    
     serializer_class = UserInfoSerializer
 
-    def get_queryset(self):
-        return UserInfo.objects.filter(user=self.request.user)
-
-    @action(detail=False, methods=["get"])
-    def whoami(self, request):
+    def get_object(self):
         """
-        Custom endpoint to retrieve the UserInfo instance for the currently logged-in user.
+        Override the `get_object` method to return the UserInfo instance for the currently logged-in user.
         """
-        # Get the user's UserInfo instance. It assumes that user has a userinfo relationship.
-        # Adjust the related name or direct relationship access accordingly.
-        user_info = self.get_queryset().filter(user=request.user).first()
-        if not user_info:
-            return Response({"error": "UserInfo not found for the user."}, status=404)
+        try:
+            return UserInfo.objects.filter(user=self.request.user).first() # Adjust this depending on your related name
+        except UserInfo.DoesNotExist:
+            # Properly handle the case where the UserInfo does not exist
+            raise Http404("No UserInfo found for this user.")
 
-        # Use the serializer to return the UserInfo data
-        serializer = self.get_serializer(user_info)
-        return Response(serializer.data)
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
