@@ -4,7 +4,7 @@ from math import floor
 
 from .MeditationService import MeditationService
 from .logger import logger
-from ..models import UserInfo, Meditation
+from ..models import UserInfo, User, Meditation
 from ..value_objects.UserThemePreference import UserThemePreference
 
 AMOUNT_OF_MEDITATIONS_TO_RECOMMEND = 10
@@ -12,7 +12,7 @@ AMOUNT_OF_MEDITATIONS_TO_RECOMMEND = 10
 
 class RecommendationService:
     @staticmethod
-    def recommend_meditations_for_user(user: UserInfo) -> List[Meditation]:
+    def recommend_meditations_for_user(user: User) -> List[Meditation]:
         user_session = MeditationService.get_user_meditation_session(user=user)
         if len(user_session) < 5:
             logger.info(f"Not enough sessions for recommendation for user {user}")
@@ -28,7 +28,6 @@ class RecommendationService:
         recommended_meditations = []
         for (
             meditation_theme,
-            amount_of_meditations,
         ) in meditation_theme_to_amount_of_meditations:
             recommended_meditations += (
                 MeditationService.get_meditations_by_meditation_theme(

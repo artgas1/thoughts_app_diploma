@@ -7,6 +7,7 @@ from ..models import (
     Meditation,
     MeditationGrade,
     MeditationTheme,
+    User,
 )
 from ..repositories.MeditationRepository import MeditationRepository
 
@@ -21,7 +22,7 @@ class MeditationService:
         )
 
     @staticmethod
-    def get_user_meditation_session(user: UserInfo):
+    def get_user_meditation_session(user: User):
         return MeditationRepository.get_meditation_sessions_of_user(user)
 
     @staticmethod

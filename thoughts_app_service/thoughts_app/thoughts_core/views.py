@@ -310,7 +310,7 @@ class RecommendMeditationsApiView(APIView):
         user = self.request.user
 
         recommended_meditations = RecommendationService.recommend_meditations_for_user(
-            user=user.userinfo
+            user=user
         )
         serialized_meditations = MeditationSerializer(
             recommended_meditations, many=True

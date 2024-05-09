@@ -44,18 +44,18 @@ class AchievementSerializer(serializers.ModelSerializer):
 
 
 class MeditationSerializer(serializers.ModelSerializer):
-    user_grade = serializers.SerializerMethodField()
-    user_sessions = serializers.SerializerMethodField()
+    # user_grade = serializers.SerializerMethodField()
+    # user_sessions = serializers.SerializerMethodField()
 
-    def get_user_sessions(self, obj):
-        user = self.context["request"].user
-        sessions = MeditationSession.objects.filter(user_id=user, meditation_id=obj)
-        return MeditationSessionSerializer(sessions, many=True).data
+    # def get_user_sessions(self, obj):
+    #     user = self.context["request"].user
+    #     sessions = MeditationSession.objects.filter(user_id=user, meditation_id=obj)
+    #     return MeditationSessionSerializer(sessions, many=True).data
 
-    def get_user_grade(self, obj):
-        user = self.context["request"].user
-        grade = MeditationGrade.objects.filter(user_id=user, meditation_id=obj).first()
-        return grade.grade if grade else None
+    # def get_user_grade(self, obj):
+    #     user = self.context["request"].user
+    #     grade = MeditationGrade.objects.filter(user_id=user, meditation_id=obj).first()
+    #     return grade.grade if grade else None
 
     class Meta:
         model = Meditation
@@ -113,17 +113,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class MeditationProgressSerializer(serializers.Serializer):
-    user_level = serializers.SerializerMethodField()
+    level_name = serializers.SerializerMethodField()
     progress_bar = serializers.SerializerMethodField()
 
-    def get_user_level(self, obj):
+    def get_user_level_name(self, obj):
         user = self.context["request"].user
         sessions_count = len(MeditationSession.objects.filter(user_id=user))
         progress_levels = ProgressLevel.objects.all().order_by("level")
         for i in range(len(progress_levels)):
             if sessions_count < progress_levels[i].level:
-                return progress_levels[i]
-        return progress_levels.last()
+                return progress_levels[i].name
+        return progress_levels.last().name
     
     def get_progress_bar(self, obj):
         user = self.context["request"].user
@@ -131,5 +131,5 @@ class MeditationProgressSerializer(serializers.Serializer):
         progress_levels = ProgressLevel.objects.all().order_by("level")
         for i in range(len(progress_levels)):
             if sessions_count < progress_levels[i].level:
-                return sessions_count / progress_levels[i].level
+                return int(sessions_count / progress_levels[i].level)
         return 1

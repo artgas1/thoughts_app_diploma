@@ -8,6 +8,7 @@ from ..models import (
     MeditationNarrator,
     MeditationSession,
     MeditationGrade,
+    User,
 )
 from ..services.logger import logger
 
@@ -138,8 +139,8 @@ class MeditationRepository:
         return meditation_session
 
     @staticmethod
-    def get_meditation_sessions_of_user(user: UserInfo) -> List[MeditationSession]:
-        return MeditationSession.objects.filter(user_id=user)
+    def get_meditation_sessions_of_user(user: User) -> List[MeditationSession]:
+        return MeditationSession.objects.filter(user=user)
 
     @staticmethod
     def get_meditation_sessions_of_meditation(
