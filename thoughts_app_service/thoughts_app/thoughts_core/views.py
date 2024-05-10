@@ -343,13 +343,24 @@ class MeditationProgressView(APIView):
         responses={
             200: MeditationProgressSerializer,
             400: "Bad request",
+            500: "Internal server error",
         },
     )
     def get(self, request):
-        data = {}
-        data['progress_to_next_level'] = UserService.get_progress_to_next_level(user=request.user)
-        data['level_name'] = UserService.get_level(user=request.user).name
-        serializer = MeditationProgressSerializer(data=data)
-        if serializer.is_valid():
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        level = UserService.get_level(user=request.user)
+        if level:
+            data = {
+                "level_name": level.name,
+                "next_level_count": level.level,
+                "current_level_count": len(
+                    MeditationSession.objects.filter(user_id=request.user)
+                ),
+            }
+            serializer = MeditationProgressSerializer(data=data)
+            if serializer.is_valid():
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "Failed to get progress data."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
