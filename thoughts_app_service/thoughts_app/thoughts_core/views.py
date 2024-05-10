@@ -6,6 +6,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.permissions import IsAuthenticated
 import openai
 import os
+import json
 from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -221,23 +222,26 @@ class ManageUserAchievements(APIView):
 
 async def generate_chat_completion(conversation, new_message):
     client = OpenAiClientSingleton().get_client()
+    meditations = []
+    async for meditation in Meditation.objects.all():
+        meditations.append({"id": meditation.pk, "name": meditation.name})
+
+    print(meditations)
     conversation.insert(
         0,
         {
             "role": "system",
-            "content": """You are a helpful assistant. 
-            You have to understand user problem and his feelings and recommend him meditation from list below. 
-            You can also ask user about his feelings and recommend him meditation based on his feelings. 
-            Write in russian.
-            Meditations: 'медитация для сна', 'медитация для пробуждения', 'медитация для снятия тревоги', 'медитация для снятия стресса',
-            'медитация для снятия депрессии', 'медитация для снятия паники', 'медитация для снятия страха',
-            'медитация для снятия боли', 'медитация для снятия гнева', 'медитация для снятия раздражения', 'медитация для снятия одиночества',
-            'медитация для снятия страха перед смертью', 'медитация для снятия страха перед болезнью', 'медитация для снятия страха перед неудачей',
-            'медитация для снятия страха перед критикой', 'медитация для снятия страха перед общением', 'медитация для снятия страха перед людьми',
-            'медитация для снятия страха перед животными', 'медитация для снятия страха перед темнотой', 'медитация для снятия страха перед высотой'
-            """,
+            "content": f"""
+Ты — виртуальный ассистент, владеющий русским языком и специализирующийся на медитациях. Твоя задача — определить проблемы и чувства пользователя, чтобы подобрать наиболее подходящую медитацию из предложенного списка. При необходимости, ты можешь задать дополнительные вопросы о чувствах пользователя, чтобы уточнить его состояние и на этой основе предложить соответствующую медитацию.
+
+Доступные медитации:
+{meditations}
+
+В ответ отправь только JSON, где `message` твой ответ пользователю, а `suggested_meditations` — предлагаемые медитации с их ID и названием.
+""",
         },
     )
+
     conversation.append({"role": "user", "content": new_message})
 
     response = await client.chat.completions.create(
@@ -245,11 +249,15 @@ async def generate_chat_completion(conversation, new_message):
         messages=conversation,
     )
 
-    conversation.append(
-        {"role": "assistant", "content": response.choices[0].message.content}
-    )
+    gpt_response = response.choices[0].message.content
 
-    return conversation[1:]
+    try:
+        gpt_response_parsed = json.loads(gpt_response)
+        conversation.append({"role": "assistant", "content": gpt_response_parsed})
+
+        return conversation[1:]
+    except:
+        return None
 
 
 class ChatBotAPIView(AsyncAPIView):
@@ -266,6 +274,7 @@ class ChatBotAPIView(AsyncAPIView):
             ),
             400: "Bad request",
             404: "Chat not found",
+            500: "Internal server error",
         },
     )
     async def post(self, request):
@@ -281,6 +290,10 @@ class ChatBotAPIView(AsyncAPIView):
             updated_conversation = await generate_chat_completion(
                 conversation, new_message
             )
+            if not updated_conversation:
+                return Response(
+                    "Invalid response from GPT", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
             requested_chat.chat_messages = updated_conversation
             await requested_chat.asave()
             return Response(
