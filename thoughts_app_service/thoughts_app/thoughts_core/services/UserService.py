@@ -1,5 +1,5 @@
 from .logger import logger
-from ..models import User, UserInfo
+from ..models import User, UserInfo, MeditationSession, ProgressLevel
 from ..repositories.UserRepository import UserRepository
 from ..repositories.AchievementRepository import AchievementRepository
 
@@ -43,3 +43,21 @@ class UserService:
             )
             return user
         return None
+
+    @staticmethod
+    def get_level(user: User) -> ProgressLevel:
+        sessions_count = len(MeditationSession.objects.filter(user_id=user))
+        progress_levels = ProgressLevel.objects.all().order_by("level")
+        for i in range(len(progress_levels)):
+            if sessions_count < progress_levels[i].level:
+                return progress_levels[i]
+        return progress_levels.last() if progress_levels else None
+    
+    # @swagger_serializer_method(serializer_or_field=openapi.Schema(type=openapi.TYPE_NUMBER))
+    def get_progress_to_next_level(user: User) -> float:
+        sessions_count = len(MeditationSession.objects.filter(user_id=user))
+        progress_levels = ProgressLevel.objects.all().order_by("level")
+        for i in range(len(progress_levels)):
+            if sessions_count < progress_levels[i].level:
+                return sessions_count / progress_levels[i].level
+        return 1 if progress_levels else None

@@ -9,6 +9,7 @@ from .models import (
     Meditation,
     Chat,
     UserInfo,
+    ProgressLevel,
 )
 
 admin.site.register(UserInfo)
@@ -19,3 +20,4 @@ admin.site.register(Meditation)
 admin.site.register(Chat)
 admin.site.register(MeditationNarrator)
 admin.site.register(MeditationGrade)
+admin.site.register(ProgressLevel)

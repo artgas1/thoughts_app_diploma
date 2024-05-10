@@ -12,6 +12,8 @@ from .models import (
     ProgressLevel,
 )
 from adrf.serializers import Serializer as AsyncSerializer
+from drf_yasg.utils import swagger_serializer_method
+from drf_yasg import openapi
 
 
 class GetReplySerializerRequest(AsyncSerializer):
@@ -113,23 +115,5 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class MeditationProgressSerializer(serializers.Serializer):
-    level_name = serializers.SerializerMethodField()
-    progress_bar = serializers.SerializerMethodField()
-
-    def get_user_level_name(self, obj):
-        user = self.context["request"].user
-        sessions_count = len(MeditationSession.objects.filter(user_id=user))
-        progress_levels = ProgressLevel.objects.all().order_by("level")
-        for i in range(len(progress_levels)):
-            if sessions_count < progress_levels[i].level:
-                return progress_levels[i].name
-        return progress_levels.last().name
-    
-    def get_progress_bar(self, obj):
-        user = self.context["request"].user
-        sessions_count = len(MeditationSession.objects.filter(user_id=user))
-        progress_levels = ProgressLevel.objects.all().order_by("level")
-        for i in range(len(progress_levels)):
-            if sessions_count < progress_levels[i].level:
-                return int(sessions_count / progress_levels[i].level)
-        return 1
+    level_name = serializers.CharField()
+    progress_to_next_level = serializers.FloatField()

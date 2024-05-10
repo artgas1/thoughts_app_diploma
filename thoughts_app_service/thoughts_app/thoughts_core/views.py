@@ -334,20 +334,22 @@ class UserRegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MeditationProgressView(AsyncAPIView):
+class MeditationProgressView(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = MeditationProgressSerializer
 
     @swagger_auto_schema(
         responses={
-            200: openapi.Schema(
-                type=MeditationProgressSerializer,
-                description="Returns user level and user progress to next level",
-            ),
+            200: MeditationProgressSerializer,
             400: "Bad request",
         },
     )
-    async def post(self, request):
-        serializer = MeditationProgressSerializer()
-        return Response(serializer.data)
+    def get(self, request):
+        data = {}
+        data['progress_to_next_level'] = UserService.get_progress_to_next_level(user=request.user)
+        data['level_name'] = UserService.get_level(user=request.user).name
+        serializer = MeditationProgressSerializer(data=data)
+        if serializer.is_valid():
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -57,5 +57,5 @@ urlpatterns = [
     path("chatbot/", ChatBotAPIView.as_view(), name="chatbot"),
     path("auth/register/", UserRegistrationView.as_view(), name="user_registration"),
     path("user_info/", UserInfoView.as_view(), name="user_info"),
-    # path("meditation_progress", MeditationProgressView.as_view(), name="meditation_progress"),
+    path("meditation_progress/", MeditationProgressView.as_view(), name="meditation_progress"),
 ]
