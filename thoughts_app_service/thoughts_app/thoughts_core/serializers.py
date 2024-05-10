@@ -116,4 +116,4 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class MeditationProgressSerializer(serializers.Serializer):
     level_name = serializers.CharField()
-    progress_to_next_level = serializers.FloatField()
+    progress_to_next_level = serializers.DecimalField(max_digits=3, decimal_places=2)
