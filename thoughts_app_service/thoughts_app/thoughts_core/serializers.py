@@ -25,7 +25,7 @@ class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
         exclude = ["user"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "chat_messages"]
 
     def create(self, validated_data):
         # Use the request user from the serializer context

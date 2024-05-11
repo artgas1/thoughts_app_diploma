@@ -57,10 +57,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "rest_framework.authtoken",
     "thoughts_core",
     "django_prometheus",
-    "drf_yasg",
+    "drf_spectacular",
     "adrf",
 ]
 
@@ -69,6 +68,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 MIDDLEWARE = [
@@ -146,8 +146,10 @@ DATABASES = {
     }
 }
 
-if 'test' in sys.argv or 'test_coverage' in sys.argv:  # 'test_coverage' might be used with coverage.py
-    DATABASES['default']['HOST'] = 'localhost'
+if (
+    "test" in sys.argv or "test_coverage" in sys.argv
+):  # 'test_coverage' might be used with coverage.py
+    DATABASES["default"]["HOST"] = "localhost"
 
 
 # Password validation
@@ -193,4 +195,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_RUNNER = "django.test.runner.DiscoverRunner"
