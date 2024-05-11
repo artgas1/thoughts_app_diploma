@@ -21,15 +21,15 @@ class GetReplySerializerRequest(AsyncSerializer):
     chat_id = serializers.UUIDField()
 
 
-class ChatSerializer(serializers.Serializer):
-    id = serializers.PrimaryKeyRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    chat_messages = serializers.JSONField(read_only=True)
+class ChatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat
+        exclude = ["user"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     def create(self, validated_data):
+        # Use the request user from the serializer context
         user = self.context["request"].user
-        user = User.objects.get(id=user.id)
         return Chat.objects.create(user=user, **validated_data)
 
 

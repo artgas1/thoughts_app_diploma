@@ -2,7 +2,8 @@ from django.http import Http404, HttpResponse
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 import openai
 import os
@@ -46,6 +47,7 @@ from rest_framework.views import APIView
 from .services.logger import logger
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.viewsets import GenericViewSet
 
 
 class OpenAiClientSingleton:
@@ -64,7 +66,7 @@ class OpenAiClientSingleton:
 
 
 class UserInfoView(RetrieveUpdateAPIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     serializer_class = UserInfoSerializer
@@ -80,11 +82,17 @@ class UserInfoView(RetrieveUpdateAPIView):
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = AchievementSerializer
     queryset = Achievement.objects.all()
 
 
 class MeditationViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = MeditationSerializer
     queryset = Meditation.objects.all()
 
@@ -157,11 +165,17 @@ class MeditationViewSet(viewsets.ModelViewSet):
 
 
 class MeditationThemeViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = MeditationThemeSerializer
     queryset = MeditationTheme.objects.all()
 
 
 class MeditationGradeViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = MeditationGradeSerializer
 
     def get_queryset(self):
@@ -174,6 +188,9 @@ class MeditationSessionViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = MeditationSessionSerializer
 
     def get_queryset(self):
@@ -181,6 +198,9 @@ class MeditationSessionViewSet(
 
 
 class MeditationNarratorViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     serializer_class = MeditationNarratorSerializer
     queryset = MeditationNarrator.objects.all()
 
@@ -261,7 +281,7 @@ async def generate_chat_completion(conversation, new_message):
 
 
 class ChatBotAPIView(AsyncAPIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = GetReplySerializerRequest
 
@@ -303,8 +323,11 @@ class ChatBotAPIView(AsyncAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ChatViewSet(viewsets.ModelViewSet):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+class ChatViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   GenericViewSet):
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ChatSerializer
 
@@ -313,7 +336,7 @@ class ChatViewSet(viewsets.ModelViewSet):
 
 
 class RecommendMeditationsApiView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
@@ -348,7 +371,7 @@ class UserRegistrationView(APIView):
 
 
 class MeditationProgressView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = MeditationProgressSerializer
 

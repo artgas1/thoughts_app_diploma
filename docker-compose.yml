@@ -9,8 +9,6 @@ services:
       - 8000:8000
     depends_on:
       - postgres_db
-    networks:
-      - default
 
   postgres_db:
     image: postgres:13
@@ -22,8 +20,6 @@ services:
       - POSTGRES_PASSWORD=postgres
     ports:
       - 5432:5432
-    networks:
-      - default
 
   prometheus:
     image: prom/prometheus
@@ -33,8 +29,6 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
-    networks:
-      - default
 
   grafana:
     image: grafana/grafana
@@ -47,14 +41,9 @@ services:
       - 3000:3000
     depends_on:
       - prometheus
-    networks:
-      - default
 
 volumes:
   postgres_data: {}
   prometheus_data: {}
   grafana_data: {}
   mongodb_data: {}
-
-networks:
-  default:
