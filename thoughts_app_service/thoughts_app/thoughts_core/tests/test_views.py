@@ -147,7 +147,6 @@ class ChatViewSetTest(TestCase):
 
 
 class MeditationProgressViewTest(TestCase):
-
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
