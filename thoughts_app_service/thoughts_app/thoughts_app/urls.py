@@ -17,11 +17,12 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path, re_path
-from .views import DecoratedTokenObtainPairView, DecoratedTokenRefreshView
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
+
+from .views import DecoratedTokenObtainPairView, DecoratedTokenRefreshView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -49,5 +50,9 @@ urlpatterns = [
         name="token_refresh",
     ),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="docs",
+    ),
 ]

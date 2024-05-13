@@ -1,6 +1,7 @@
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 """
@@ -33,7 +34,9 @@ required_env_vars = [
 # Check if all required environment variables are set
 for var in required_env_vars:
     if not os.getenv(var):
-        raise EnvironmentError(f"Required environment variable {var} is not set")
+        raise EnvironmentError(
+            f"Required environment variable {var} is not set"
+        )
 
 
 # Quick-start development settings - unsuitable for production

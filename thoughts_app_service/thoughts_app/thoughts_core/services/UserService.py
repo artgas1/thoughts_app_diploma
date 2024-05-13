@@ -1,7 +1,7 @@
-from .logger import logger
-from ..models import User, UserInfo, MeditationSession, ProgressLevel
-from ..repositories.UserRepository import UserRepository
+from ..models import MeditationSession, ProgressLevel, User, UserInfo
 from ..repositories.AchievementRepository import AchievementRepository
+from ..repositories.UserRepository import UserRepository
+from .logger import logger
 
 
 class UserService:
@@ -18,7 +18,9 @@ class UserService:
         return UserRepository.get_user_by_id(user_id=user_id)
 
     @staticmethod
-    def add_achievement_to_user(user_id: int, achievement_id: int) -> User | None:
+    def add_achievement_to_user(
+        user_id: int, achievement_id: int
+    ) -> User | None:
         user = UserRepository.get_user_by_id(user_id=user_id)
         achievement = AchievementRepository.get_achievement_by_id(
             achievement_id=achievement_id
@@ -31,7 +33,9 @@ class UserService:
         return None
 
     @staticmethod
-    def remove_achievement_from_user(user_id: int, achievement_id: int) -> User | None:
+    def remove_achievement_from_user(
+        user_id: int, achievement_id: int
+    ) -> User | None:
         user = UserRepository.get_user_by_id(user_id=user_id)
         achievement = AchievementRepository.get_achievement_by_id(
             achievement_id=achievement_id

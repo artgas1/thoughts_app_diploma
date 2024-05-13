@@ -2,12 +2,12 @@ import random
 from typing import List
 
 from ..models import (
-    MeditationSession,
-    UserInfo,
     Meditation,
     MeditationGrade,
+    MeditationSession,
     MeditationTheme,
     User,
+    UserInfo,
 )
 from ..repositories.MeditationRepository import MeditationRepository
 

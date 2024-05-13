@@ -1,53 +1,50 @@
-from django.http import Http404, HttpResponse
-from rest_framework import viewsets, status, mixins
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-import openai
-import os
 import json
-from django.core.exceptions import ObjectDoesNotExist
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+import os
 
-from .services.RecommendationService import RecommendationService
-from .services.S3Service import S3Service
-from .services.UserService import UserService
+import openai
+from adrf.views import APIView as AsyncAPIView
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404, HttpResponse
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import mixins, status, viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action
+from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import (
     Achievement,
     Chat,
-    MeditationNarrator,
     Meditation,
-    MeditationTheme,
     MeditationGrade,
+    MeditationNarrator,
     MeditationSession,
+    MeditationTheme,
     UserInfo,
 )
 from .serializers import (
     AchievementSerializer,
     ChatSerializer,
     GetReplySerializerRequest,
+    MeditationGradeSerializer,
     MeditationNarratorSerializer,
+    MeditationProgressSerializer,
+    MeditationSerializer,
+    MeditationSessionSerializer,
+    MeditationThemeSerializer,
     UserAchievementSerializer,
     UserInfoSerializer,
-    MeditationSerializer,
-    MeditationThemeSerializer,
-    MeditationGradeSerializer,
-    MeditationSessionSerializer,
     UserRegistrationSerializer,
-    MeditationProgressSerializer,
 )
-
-from adrf.views import APIView as AsyncAPIView
-from rest_framework.views import APIView
-
 from .services.logger import logger
-from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework.viewsets import GenericViewSet
+from .services.RecommendationService import RecommendationService
+from .services.S3Service import S3Service
+from .services.UserService import UserService
 
 
 class OpenAiClientSingleton:
@@ -104,8 +101,12 @@ class MeditationViewSet(viewsets.ModelViewSet):
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY
                 ),
                 "name": openapi.Schema(type=openapi.TYPE_STRING),
-                "meditation_theme_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "meditation_narrator_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "meditation_theme_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER
+                ),
+                "meditation_narrator_id": openapi.Schema(
+                    type=openapi.TYPE_INTEGER
+                ),
                 "cover_file_name": openapi.Schema(type=openapi.TYPE_STRING),
             },
         ),
@@ -119,13 +120,16 @@ class MeditationViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if "file" not in request.data:
             return Response(
-                {"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         meditation_data = {
             "name": request.data.get("name"),
             "meditation_theme_id": request.data.get("meditation_theme_id"),
-            "meditation_narrator_id": request.data.get("meditation_narrator_id"),
+            "meditation_narrator_id": request.data.get(
+                "meditation_narrator_id"
+            ),
             "audio_file_name": "default_file_name",
             "cover_file_name": request.data.get("cover_file_name"),
         }
@@ -156,8 +160,12 @@ class MeditationViewSet(viewsets.ModelViewSet):
             "cover_file_name": instance.cover_file_name,
         }
 
-        response = HttpResponse(audio_file, content_type="application/octet-stream")
-        response["Content-Disposition"] = 'attachment; filename="audio_file.mp3"'
+        response = HttpResponse(
+            audio_file, content_type="application/octet-stream"
+        )
+        response[
+            "Content-Disposition"
+        ] = 'attachment; filename="audio_file.mp3"'
         for key, value in response_data.items():
             response[key] = value
 
@@ -229,13 +237,17 @@ class ManageUserAchievements(APIView):
                 )
             else:
                 return Response(
-                    {"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST
+                    {"detail": "Invalid action."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             if user:
                 user_serializer = UserInfoSerializer(user)
-                return Response(user_serializer.data, status=status.HTTP_200_OK)
+                return Response(
+                    user_serializer.data, status=status.HTTP_200_OK
+                )
             return Response(
-                {"detail": "Failed to update user."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Failed to update user."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -273,7 +285,9 @@ async def generate_chat_completion(conversation, new_message):
 
     try:
         gpt_response_parsed = json.loads(gpt_response)
-        conversation.append({"role": "assistant", "content": gpt_response_parsed})
+        conversation.append(
+            {"role": "assistant", "content": gpt_response_parsed}
+        )
 
         return conversation[1:]
     except:
@@ -303,9 +317,13 @@ class ChatBotAPIView(AsyncAPIView):
             new_message = serializer.validated_data.get("message")
             chat_id = serializer.validated_data.get("chat_id")
             try:
-                requested_chat = await Chat.objects.aget(user=request.user, id=chat_id)
+                requested_chat = await Chat.objects.aget(
+                    user=request.user, id=chat_id
+                )
             except ObjectDoesNotExist:
-                return Response("Chat not found", status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    "Chat not found", status=status.HTTP_404_NOT_FOUND
+                )
             conversation = requested_chat.chat_messages
             updated_conversation = await generate_chat_completion(
                 conversation, new_message
@@ -318,10 +336,13 @@ class ChatBotAPIView(AsyncAPIView):
             requested_chat.chat_messages = updated_conversation
             await requested_chat.asave()
             return Response(
-                updated_conversation[-1].get("content"), status=status.HTTP_200_OK
+                updated_conversation[-1].get("content"),
+                status=status.HTTP_200_OK,
             )
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ChatViewSet(
@@ -348,8 +369,8 @@ class RecommendMeditationsApiView(APIView):
     def get(self, request):
         user = self.request.user
 
-        recommended_meditations = RecommendationService.recommend_meditations_for_user(
-            user=user
+        recommended_meditations = (
+            RecommendationService.recommend_meditations_for_user(user=user)
         )
         serialized_meditations = MeditationSerializer(
             recommended_meditations, many=True
@@ -399,7 +420,9 @@ class MeditationProgressView(APIView):
             if serializer.is_valid():
                 return Response(serializer.data)
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
         return Response(
             {"detail": "Failed to get progress data."},
             status=status.HTTP_400_BAD_REQUEST,

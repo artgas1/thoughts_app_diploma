@@ -1,5 +1,7 @@
 import os
+
 import boto3
+
 from .logger import logger
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")

@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import List
 
 from ..models import (
-    UserInfo,
     Meditation,
-    MeditationTheme,
+    MeditationGrade,
     MeditationNarrator,
     MeditationSession,
-    MeditationGrade,
+    MeditationTheme,
     User,
+    UserInfo,
 )
 from ..services.logger import logger
 
@@ -19,11 +19,15 @@ class MeditationRepository:
         return MeditationTheme.objects.create(name=name, cover_url=cover_url)
 
     @staticmethod
-    def get_meditation_theme_by_id(meditation_theme_id: int) -> MeditationTheme | None:
+    def get_meditation_theme_by_id(
+        meditation_theme_id: int,
+    ) -> MeditationTheme | None:
         try:
             return MeditationTheme.objects.get(pk=meditation_theme_id)
         except MeditationTheme.DoesNotExist:
-            logger.error(f"MeditationTheme with id {meditation_theme_id} not found!")
+            logger.error(
+                f"MeditationTheme with id {meditation_theme_id} not found!"
+            )
             return None
 
     @staticmethod
@@ -31,7 +35,9 @@ class MeditationRepository:
         try:
             MeditationTheme.objects.get(pk=meditation_theme_id).delete()
         except MeditationTheme.DoesNotExist:
-            logger.error(f"MeditationTheme with id {meditation_theme_id} not found!")
+            logger.error(
+                f"MeditationTheme with id {meditation_theme_id} not found!"
+            )
 
     @staticmethod
     def get_all_meditation_themes() -> List[MeditationTheme]:
@@ -111,13 +117,17 @@ class MeditationRepository:
     def get_meditations_by_meditation_narrator(
         meditation_narrator: MeditationNarrator,
     ) -> List[Meditation]:
-        return Meditation.objects.filter(meditation_narrator=meditation_narrator)
+        return Meditation.objects.filter(
+            meditation_narrator=meditation_narrator
+        )
 
     @staticmethod
     def create_meditation_session(
         user: UserInfo, meditation: Meditation
     ) -> MeditationSession:
-        return MeditationSession.objects.create(user_id=user, meditation_id=meditation)
+        return MeditationSession.objects.create(
+            user_id=user, meditation_id=meditation
+        )
 
     @staticmethod
     def get_meditation_session_by_id(
@@ -161,7 +171,9 @@ class MeditationRepository:
         )
 
     @staticmethod
-    def delete_meditation_grade(user: UserInfo, meditation: Meditation) -> None:
+    def delete_meditation_grade(
+        user: UserInfo, meditation: Meditation
+    ) -> None:
         return MeditationGrade.objects.delete(user=user, meditation=meditation)
 
     @staticmethod

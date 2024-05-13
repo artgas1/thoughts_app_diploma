@@ -1,19 +1,20 @@
 from django.urls import include, path
 from rest_framework import routers
+
 from .views import (
+    AchievementViewSet,
     ChatBotAPIView,
     ChatViewSet,
-    AchievementViewSet,
-    MeditationViewSet,
-    MeditationThemeViewSet,
-    MeditationGradeViewSet,
-    MeditationSessionViewSet,
-    MeditationNarratorViewSet,
     ManageUserAchievements,
-    RecommendMeditationsApiView,
-    UserRegistrationView,
-    UserInfoView,
+    MeditationGradeViewSet,
+    MeditationNarratorViewSet,
     MeditationProgressView,
+    MeditationSessionViewSet,
+    MeditationThemeViewSet,
+    MeditationViewSet,
+    RecommendMeditationsApiView,
+    UserInfoView,
+    UserRegistrationView,
 )
 
 router = routers.SimpleRouter()
@@ -29,10 +30,14 @@ router.register(
     r"meditation_grade", MeditationGradeViewSet, basename="meditation_grade"
 )
 router.register(
-    r"meditation_session", MeditationSessionViewSet, basename="meditation_session"
+    r"meditation_session",
+    MeditationSessionViewSet,
+    basename="meditation_session",
 )
 router.register(
-    r"meditation_narrator", MeditationNarratorViewSet, basename="meditation_narrator"
+    r"meditation_narrator",
+    MeditationNarratorViewSet,
+    basename="meditation_narrator",
 )
 
 urlpatterns = [
@@ -55,7 +60,11 @@ urlpatterns = [
     ),
     path("", include(router.urls)),
     path("chatbot/", ChatBotAPIView.as_view(), name="chatbot"),
-    path("auth/register/", UserRegistrationView.as_view(), name="user_registration"),
+    path(
+        "auth/register/",
+        UserRegistrationView.as_view(),
+        name="user_registration",
+    ),
     path("user_info/", UserInfoView.as_view(), name="user_info"),
     path(
         "meditation_progress/",

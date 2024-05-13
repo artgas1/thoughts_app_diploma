@@ -1,11 +1,10 @@
+from math import floor
 from typing import List
 
-from math import floor
-
-from .MeditationService import MeditationService
-from .logger import logger
-from ..models import UserInfo, User, Meditation
+from ..models import Meditation, User, UserInfo
 from ..value_objects.UserThemePreference import UserThemePreference
+from .logger import logger
+from .MeditationService import MeditationService
 
 AMOUNT_OF_MEDITATIONS_TO_RECOMMEND = 10
 
@@ -15,14 +14,18 @@ class RecommendationService:
     def recommend_meditations_for_user(user: User) -> List[Meditation]:
         user_session = MeditationService.get_user_meditation_session(user=user)
         if len(user_session) < 5:
-            logger.info(f"Not enough sessions for recommendation for user {user}")
+            logger.info(
+                f"Not enough sessions for recommendation for user {user}"
+            )
             return MeditationService.get_random_meditations(amount=10)
 
         meditation_theme_to_amount_of_meditations = (
             RecommendationService.analyze_user_grades(user=user)
         )
         if not meditation_theme_to_amount_of_meditations:
-            logger.info(f"Not enough grades for recommendation for user {user}")
+            logger.info(
+                f"Not enough grades for recommendation for user {user}"
+            )
             return MeditationService.get_random_meditations(amount=10)
 
         recommended_meditations = []
@@ -55,7 +58,9 @@ class RecommendationService:
 
         # Фильтруем темы с рейтингом ниже 4
         meditation_theme_grade_filtered = [
-            (theme, rating) for theme, rating in meditation_theme_grade if rating >= 4.0
+            (theme, rating)
+            for theme, rating in meditation_theme_grade
+            if rating >= 4.0
         ]
 
         # Вычисляем пропорциональное количество медитаций для каждой темы
@@ -71,7 +76,10 @@ class RecommendationService:
         meditation_name_to_amount_of_meditations = []
         for i in range(len(meditation_theme_grade_filtered)):
             meditation_name_to_amount_of_meditations.append(
-                (meditation_theme_grade_filtered[i][0], meditations_per_theme[i])
+                (
+                    meditation_theme_grade_filtered[i][0],
+                    meditations_per_theme[i],
+                )
             )
 
         logger.info(

@@ -1,12 +1,14 @@
 from typing import List
 
-from ..services.logger import logger
 from ..models import Achievement, UserInfo
+from ..services.logger import logger
 
 
 class AchievementRepository:
     @staticmethod
-    def create_achievement(name: str, cover_url: str, description: str) -> Achievement:
+    def create_achievement(
+        name: str, cover_url: str, description: str
+    ) -> Achievement:
         return Achievement.objects.create(
             name=name, cover_url=cover_url, description=description
         )
@@ -24,7 +26,9 @@ class AchievementRepository:
         return user.achievements.all()
 
     @staticmethod
-    def add_achievement_to_user(user: UserInfo, achievement: Achievement) -> UserInfo:
+    def add_achievement_to_user(
+        user: UserInfo, achievement: Achievement
+    ) -> UserInfo:
         user.achievements.add(achievement)
         user.save()
         return user

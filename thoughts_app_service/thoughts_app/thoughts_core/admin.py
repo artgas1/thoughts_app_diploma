@@ -2,14 +2,14 @@ from django.contrib import admin
 
 from .models import (
     Achievement,
-    MeditationSession,
-    MeditationNarrator,
-    MeditationGrade,
-    MeditationTheme,
-    Meditation,
     Chat,
-    UserInfo,
+    Meditation,
+    MeditationGrade,
+    MeditationNarrator,
+    MeditationSession,
+    MeditationTheme,
     ProgressLevel,
+    UserInfo,
 )
 
 admin.site.register(UserInfo)

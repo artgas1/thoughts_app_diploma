@@ -1,29 +1,26 @@
-from django.test import TestCase
+import logging
+from unittest.mock import AsyncMock, patch
 
-# Create your tests here.
-
+from asgiref.sync import async_to_sync, sync_to_async
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from django.contrib.auth.models import User
-from ..models import UserInfo
-from unittest.mock import patch
-from ..models import (
-    MeditationTheme,
-    MeditationNarrator,
-    ProgressLevel,
-    MeditationSession,
-    Meditation,
-)
-from django.core.files.uploadedfile import SimpleUploadedFile
-from asgiref.sync import sync_to_async
-from unittest.mock import patch, AsyncMock
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 from thoughts_core.models import Chat
-import logging
-from django.core.exceptions import ObjectDoesNotExist
-from asgiref.sync import async_to_sync
+
+from ..models import (
+    Meditation,
+    MeditationNarrator,
+    MeditationSession,
+    MeditationTheme,
+    ProgressLevel,
+)
+
+# Create your tests here.
 
 
 class AuthenticationTest(TestCase):

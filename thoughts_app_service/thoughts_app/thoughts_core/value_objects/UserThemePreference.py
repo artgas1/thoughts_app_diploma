@@ -1,4 +1,4 @@
-from ..models import UserInfo, MeditationTheme
+from ..models import MeditationTheme, UserInfo
 
 
 class UserThemePreference:

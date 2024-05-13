@@ -1,19 +1,20 @@
+from adrf.serializers import Serializer as AsyncSerializer
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
+
 from .models import (
     Achievement,
+    Chat,
     Meditation,
     MeditationGrade,
     MeditationNarrator,
     MeditationSession,
     MeditationTheme,
-    User,
-    Chat,
-    UserInfo,
     ProgressLevel,
+    User,
+    UserInfo,
 )
-from adrf.serializers import Serializer as AsyncSerializer
-from drf_yasg.utils import swagger_serializer_method
-from drf_yasg import openapi
 
 
 class GetReplySerializerRequest(AsyncSerializer):

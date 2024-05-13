@@ -17,7 +17,9 @@ class UserRepository:
 
     @staticmethod
     def create_user(user: User, name: str, phone_number: str) -> UserInfo:
-        return UserInfo.objects.create(user=user, name=name, phone_number=phone_number)
+        return UserInfo.objects.create(
+            user=user, name=name, phone_number=phone_number
+        )
 
     @staticmethod
     def delete_user_by_id(user_id: int) -> None:
@@ -37,7 +39,9 @@ class UserRepository:
         return user
 
     @staticmethod
-    def update_user_phone_number(user: UserInfo, phone_number: str) -> UserInfo:
+    def update_user_phone_number(
+        user: UserInfo, phone_number: str
+    ) -> UserInfo:
         user.phone_number = phone_number
         user.save()
         return user
