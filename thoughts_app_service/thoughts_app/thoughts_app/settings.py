@@ -130,6 +130,7 @@ LOGGING = {
 }
 
 WSGI_APPLICATION = "thoughts_app.wsgi.application"
+ASGI_APPLICATION = "thoughts_app.asgi.application"
 
 
 # Database
@@ -147,7 +148,7 @@ DATABASES = {
 }
 
 if (
-    "test" in sys.argv or "test_coverage" in sys.argv
+    "test" in sys.argv or "test_coverage" in sys.argv or "pytest" in sys.argv
 ):  # 'test_coverage' might be used with coverage.py
     DATABASES["default"]["HOST"] = "localhost"
 

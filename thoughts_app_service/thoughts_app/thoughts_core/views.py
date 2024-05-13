@@ -84,7 +84,7 @@ class UserInfoView(RetrieveUpdateAPIView):
 class AchievementViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = AchievementSerializer
     queryset = Achievement.objects.all()
 
@@ -92,7 +92,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
 class MeditationViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = MeditationSerializer
     queryset = Meditation.objects.all()
 
@@ -167,7 +167,7 @@ class MeditationViewSet(viewsets.ModelViewSet):
 class MeditationThemeViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = MeditationThemeSerializer
     queryset = MeditationTheme.objects.all()
 
@@ -175,7 +175,7 @@ class MeditationThemeViewSet(viewsets.ModelViewSet):
 class MeditationGradeViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = MeditationGradeSerializer
 
     def get_queryset(self):
@@ -190,7 +190,7 @@ class MeditationSessionViewSet(
 ):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = MeditationSessionSerializer
 
     def get_queryset(self):
@@ -200,7 +200,7 @@ class MeditationSessionViewSet(
 class MeditationNarratorViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     serializer_class = MeditationNarratorSerializer
     queryset = MeditationNarrator.objects.all()
 
@@ -312,7 +312,8 @@ class ChatBotAPIView(AsyncAPIView):
             )
             if not updated_conversation:
                 return Response(
-                    "Invalid response from GPT", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    "Invalid response from GPT",
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             requested_chat.chat_messages = updated_conversation
             await requested_chat.asave()
@@ -323,10 +324,12 @@ class ChatBotAPIView(AsyncAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ChatViewSet(mixins.CreateModelMixin,
-                   mixins.RetrieveModelMixin,
-                   mixins.ListModelMixin,
-                   GenericViewSet):
+class ChatViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
+):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ChatSerializer
@@ -395,8 +398,9 @@ class MeditationProgressView(APIView):
             serializer = MeditationProgressSerializer(data=data)
             if serializer.is_valid():
                 return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             {"detail": "Failed to get progress data."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status=status.HTTP_400_BAD_REQUEST,
         )

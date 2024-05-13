@@ -1,0 +1,8 @@
+[run]
+source = thoughts_app
+omit = 
+    */tests/*
+    */migrations/*
+
+[report]
+show_missing = True

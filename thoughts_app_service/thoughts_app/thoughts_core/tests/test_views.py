@@ -8,7 +8,13 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from ..models import UserInfo
 from unittest.mock import patch
-from ..models import MeditationTheme, MeditationNarrator
+from ..models import (
+    MeditationTheme,
+    MeditationNarrator,
+    ProgressLevel,
+    MeditationSession,
+    Meditation,
+)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from asgiref.sync import sync_to_async
 from unittest.mock import patch, AsyncMock
@@ -16,89 +22,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.test import APIClient
 from thoughts_core.models import Chat
 import logging
-
-
-# class UserInfoViewTest(TestCase):
-#     def setUp(self):
-#         self.user = User.objects.create_user(username="testuser", password="12345")
-#         self.user_info = UserInfo.objects.create(
-#             user=self.user, additional_data="test data"
-#         )
-#         self.client.login(username="testuser", password="12345")
-
-#     def test_user_info_retrieval(self):
-#         url = reverse(
-#             "userinfo-detail", args=[self.user_info.pk]
-#         )  # Adjust the URL name as needed
-#         response = self.client.get(url)
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertIn("additional_data", response.json())
-
-#     def test_user_info_not_found(self):
-#         self.client.logout()
-#         another_user = User.objects.create_user(
-#             username="anotheruser", password="54321"
-#         )
-#         self.client.login(username="anotheruser", password="54321")
-#         url = reverse(
-#             "userinfo-detail", args=[self.user_info.pk]
-#         )  # Adjust the URL name as needed
-#         response = self.client.get(url)
-#         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-
-# class MeditationViewSetTest(TestCase):
-#     def setUp(self):
-#         self.user = User.objects.create_user(username="testuser", password="12345")
-#         self.theme = MeditationTheme.objects.create(name="Relaxation")
-#         self.narrator = MeditationNarrator.objects.create(name="John Doe")
-#         self.client.login(username="testuser", password="12345")
-#         self.token = RefreshToken.for_user(self.user)
-#         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token.access_token}")
-
-#     @patch("path.to.S3Service.upload_file")
-#     def test_create_meditation(self, mock_upload_file):
-#         url = reverse("meditation-list")  # Adjust the URL name as needed
-#         data = {
-#             "name": "Test Meditation",
-#             "meditation_theme_id": self.theme.pk,
-#             "meditation_narrator_id": self.narrator.pk,
-#             "cover_file_name": "test_cover.jpg",
-#             "file": SimpleUploadedFile(
-#                 "test.mp3", b"file_content", content_type="audio/mp3"
-#             ),
-#         }
-#         response = self.client.post(url, data, format="multipart")
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         mock_upload_file.assert_called_once()
-
-
-# class ChatBotAPIViewTest(TestCase):
-#     def setUp(self):
-#         self.user = User.objects.create_user(username="testuser", password="12345")
-#         self.token = RefreshToken.for_user(self.user)
-#         self.client = APIClient()
-#         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token.access_token}")
-
-#     @patch("thoughts_core.views.OpenAiClientSingleton.get_client")
-#     async def test_chat_bot_response(self, mock_get_client):
-#         mock_client = AsyncMock()
-#         mock_get_client.return_value = mock_client
-#         mock_client.chat.completions.create.return_value = {
-#             "choices": [
-#                 {
-#                     "message": {
-#                         "content": '{"message": "Hi!", "suggested_meditations": []}'
-#                     }
-#                 }
-#             ]
-#         }
-
-#         url = reverse("chatbot")  # Adjust the URL name as needed
-#         data = {"message": "Hello!", "chat_id": 1}
-#         response = await sync_to_async(self.client.post)(url, data, format="json")
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#         self.assertIn("Hi!", response.content.decode())
+from django.core.exceptions import ObjectDoesNotExist
+from asgiref.sync import async_to_sync
 
 
 class AuthenticationTest(TestCase):
@@ -218,4 +143,122 @@ class ChatViewSetTest(TestCase):
     def test_unauthorized_access(self):
         self.client.force_authenticate(user=None)  # No user authenticated
         response = self.client.get("/api/chat/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class MeditationProgressViewTest(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword123"
+        )
+        self.meditations = (
+            Meditation.objects.create()
+        )  # Now the Meditation model is defined
+        self.meditations_sessions = MeditationSession.objects.bulk_create(
+            [
+                MeditationSession(user=self.user, meditation=Meditation.objects.first())
+                for _ in range(3)
+            ]
+        )
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("meditation_progress")
+
+        # Mock data
+        self.level = ProgressLevel(name="Beginner", level=5)
+        self.sessions = [
+            MeditationSession(user=self.user) for _ in range(3)
+        ]  # Assuming this matches your model definition
+
+    def tearDown(self):
+        self.user.delete()
+        self.meditations.delete()
+        for session in self.meditations_sessions:
+            session.delete()
+
+    @patch(
+        "thoughts_core.services.UserService.UserService.get_level"
+    )  # Correct the path as necessary
+    def test_get_meditation_progress_success(self, mock_get_level):
+        mock_get_level.return_value = self.level
+        response = self.client.get(self.url)
+        expected_data = {
+            "level_name": "Beginner",
+            "next_level_count": 5,
+            "current_level_count": 3,
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected_data)
+
+    @patch("thoughts_core.services.UserService.UserService.get_level")
+    def test_get_meditation_progress_no_level_found(self, mock_get_level):
+        mock_get_level.return_value = None
+        response = self.client.get(self.url)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"detail": "Failed to get progress data."})
+
+    def test_authentication_required(self):
+        self.client.force_authenticate(user=None)  # No user authenticated
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class RecommendMeditationsApiViewTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword123"
+        )
+        self.url = (
+            "/api/meditation/recommend_meditations/"  # Update with the actual URL
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def tearDown(self):
+        self.user.delete()
+
+    @patch(
+        "thoughts_core.services.RecommendationService.RecommendationService.recommend_meditations_for_user"
+    )
+    def test_recommend_meditations(self, mock_recommend_service):
+        # Create instances of themes and narrators
+        theme = MeditationTheme.objects.create(
+            name="Relaxation", cover_file_url="http://example.com/theme.jpg"
+        )
+        narrator = MeditationNarrator.objects.create(name="John Doe")
+
+        # Create two real meditation instances
+        meditation1 = Meditation.objects.create(
+            name="Zen Meditation",
+            meditation_theme=theme,
+            meditation_narrator=narrator,
+            audio_file_url="http://audio.com/zen.mp3",
+            cover_file_url="http://image.com/zen.jpg",
+        )
+        meditation2 = Meditation.objects.create(
+            name="Mindfulness",
+            meditation_theme=theme,
+            meditation_narrator=narrator,
+            audio_file_url="http://audio.com/mindfulness.mp3",
+            cover_file_url="http://image.com/mindfulness.jpg",
+        )
+
+        # Return these instances from the mocked service
+        mock_recommend_service.return_value = [meditation1, meditation2]
+
+        # Make GET request to the API
+        response = self.client.get(self.url)
+
+        # Assert that the response is correct
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Ensure serializers work as expected
+        self.assertTrue("Zen Meditation" in response.content.decode())
+        self.assertTrue("Mindfulness" in response.content.decode())
+
+    def test_unauthenticated_access(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

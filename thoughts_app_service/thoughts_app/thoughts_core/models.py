@@ -70,7 +70,7 @@ class MeditationSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     meditation = models.ForeignKey(Meditation, on_delete=models.CASCADE)
     session_start_time = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"MeditationSession from {self.user} for {self.meditation}"
 
@@ -90,7 +90,7 @@ class Chat(models.Model):
     chat_messages = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    
+
 
 class ProgressLevel(models.Model):
     level = models.IntegerField()

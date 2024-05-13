@@ -49,13 +49,17 @@ urlpatterns = [
         name="remove_achievement_from_user",
     ),
     path(
-        "meditation/recomendate_meditations/",
+        "meditation/recommend_meditations/",
         RecommendMeditationsApiView.as_view(),
-        name="recomendate_meditations",
+        name="recommend_meditations",
     ),
     path("", include(router.urls)),
     path("chatbot/", ChatBotAPIView.as_view(), name="chatbot"),
     path("auth/register/", UserRegistrationView.as_view(), name="user_registration"),
     path("user_info/", UserInfoView.as_view(), name="user_info"),
-    path("meditation_progress/", MeditationProgressView.as_view(), name="meditation_progress"),
+    path(
+        "meditation_progress/",
+        MeditationProgressView.as_view(),
+        name="meditation_progress",
+    ),
 ]

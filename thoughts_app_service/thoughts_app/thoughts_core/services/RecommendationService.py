@@ -26,9 +26,7 @@ class RecommendationService:
             return MeditationService.get_random_meditations(amount=10)
 
         recommended_meditations = []
-        for (
-            meditation_theme,
-        ) in meditation_theme_to_amount_of_meditations:
+        for (meditation_theme,) in meditation_theme_to_amount_of_meditations:
             recommended_meditations += (
                 MeditationService.get_meditations_by_meditation_theme(
                     meditation_theme=meditation_theme
