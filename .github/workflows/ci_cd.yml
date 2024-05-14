@@ -29,6 +29,17 @@ jobs:
         run: |
           pip install isort
           isort --check-only thoughts_app_service/thoughts_app
+      - name: Prepare environment file
+        run: |
+          echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> thoughts_app_service/.env
+          echo "DEBUG=${{ secrets.DJANGO_DEBUG_KEY }}" >> thoughts_app_service/.env
+          echo "ALLOWED_HOSTS=${{ secrets.DJANGO_ALLOWED_HOSTS }}" >> thoughts_app_service/.env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> thoughts_app_service/.env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> thoughts_app_service/.env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> thoughts_app_service/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> thoughts_app_service/.env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> thoughts_app_service/.env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> thoughts_app_service/.env
       - name: Run Django tests
         run: |
           python thoughts_app_service/thoughts_app/manage.py test thoughts_core thoughts_app
