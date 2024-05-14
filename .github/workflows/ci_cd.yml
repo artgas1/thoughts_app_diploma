@@ -40,9 +40,12 @@ jobs:
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> thoughts_app_service/.env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> thoughts_app_service/.env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> thoughts_app_service/.env
-      - name: Run Django tests
+      - name: Prepare Docker Compose
         run: |
-          python thoughts_app_service/thoughts_app/manage.py test thoughts_core thoughts_app
+          docker build -t thoughts_app_service -f thoughts_app_service/Dockerfile thoughts_app_service/
+      - name: Run Django tests inside Docker compose
+        run: |
+          docker compose run --rm web python thoughts_app/manage.py test thoughts_core thoughts_app
 
   deploy:
     needs: build-and-test
