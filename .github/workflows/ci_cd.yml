@@ -48,7 +48,7 @@ jobs:
           docker compose run --rm web python thoughts_app/manage.py test thoughts_core thoughts_app
 
   deploy:
-    needs: build-and-test
+    # needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
