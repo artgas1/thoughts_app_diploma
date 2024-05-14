@@ -25,11 +25,18 @@ jobs:
         run: |
           pip install flake8
           flake8 thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
-      - name: Test with pytest
+      - name: Lint with Black
         run: |
-          pip install pytest
+          pip install black
+          black --check thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
+      - name: Lint with isort
+        run: |
+          pip install isort
+          isort --check-only thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
+      - name: Run Django tests
+        run: |
           cd thoughts_app_service
-          pytest
+          python manage.py test
 
   deploy:
     needs: build-and-test
