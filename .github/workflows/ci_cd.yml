@@ -87,7 +87,7 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          
+          ssh ${USER}@${HOST} "mkdir -p ~/ThoughtsApp"
           scp * ${USER}@${HOST}:~/ThoughtsApp
           ssh${USER}@${HOST} "cd ~/ThoughtsApp && docker compose down && docker compose up -d --build"
         env:
