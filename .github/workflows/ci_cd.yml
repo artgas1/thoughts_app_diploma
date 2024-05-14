@@ -51,21 +51,45 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
     steps:
       - uses: actions/checkout@v3
-      - name: Build Docker image
-        run: docker build -t thoughts_app_service -f thoughts_app_service/Dockerfile .
       - name: Prepare environment file
         run: |
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-          # Add other necessary environment variables
+          echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> thoughts_app_service/.env
+          echo "DEBUG=${{ secrets.DJANGO_DEBUG }}" >> thoughts_app_service/.env
+          echo "ALLOWED_HOSTS=${{ secrets.DJANGO_ALLOWED_HOSTS }}" >> thoughts_app_service/.env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> thoughts_app_service/.env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> thoughts_app_service/.env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> thoughts_app_service/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> thoughts_app_service/.env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> thoughts_app_service/.env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> thoughts_app_service/.env
+
+      - name: Prepare for connecting to VPS
+        run: |
+          echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Host ${{ secrets.SERVER_IP }}" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "  User ${{ secrets.SERVER_USER }}" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Ensure Docker is installed on the VPS
+        run: |
+          scp install_docker.sh ${USER}@${HOST}:~/
+          ssh ${USER}@${HOST} "chmod +x ~/install_docker.sh && ~/install_docker.sh"
+        env:
+          USER: ${{ secrets.SERVER_USER }}
+          HOST: ${{ secrets.SERVER_IP }}
+
       - name: Deploy to VPS
         run: |
-          scp -o StrictHostKeyChecking=no docker-compose.yml ${USER}@${HOST}:/path/to/project
-          scp -o StrictHostKeyChecking=no .env ${USER}@${HOST}:/path/to/project
-          scp -o StrictHostKeyChecking=no thoughts_app_service/Dockerfile ${USER}@${HOST}:/path/to/project/thoughts_app_service
-          ssh -o StrictHostKeyChecking=no ${USER}@${HOST} "cd /path/to/project && docker-compose down && docker-compose up -d --build"
+          
+          scp * ${USER}@${HOST}:~/ThoughtsApp
+          ssh${USER}@${HOST} "cd ~/ThoughtsApp && docker compose down && docker compose up -d --build"
         env:
-          USER: ${{ secrets.SERVER_SSH_USER }}
+          USER: ${{ secrets.SERVER_USER }}
           HOST: ${{ secrets.SERVER_IP }}
+        
