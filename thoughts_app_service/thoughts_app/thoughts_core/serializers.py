@@ -1,5 +1,6 @@
 from adrf.serializers import Serializer as AsyncSerializer
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_serializer
 
 from .models import (
     Achievement,
@@ -69,9 +70,7 @@ class SuggestedMeditationSerializer(AsyncSerializer):
 
 class GetGPTAnswerResponseSerializer(AsyncSerializer):
     message = serializers.CharField()
-    suggested_meditations = serializers.ListField(
-        child=SuggestedMeditationSerializer(), allow_empty=True
-    )
+    suggested_meditations = SuggestedMeditationSerializer(many=True)
 
 
 class MeditationThemeSerializer(serializers.ModelSerializer):
