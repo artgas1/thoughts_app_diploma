@@ -1,6 +1,4 @@
 from adrf.serializers import Serializer as AsyncSerializer
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from .models import (
@@ -11,15 +9,9 @@ from .models import (
     MeditationNarrator,
     MeditationSession,
     MeditationTheme,
-    ProgressLevel,
     User,
     UserInfo,
 )
-
-
-class GetReplySerializerRequest(AsyncSerializer):
-    message = serializers.CharField()
-    chat_id = serializers.UUIDField()
 
 
 class ChatSerializer(serializers.ModelSerializer):
@@ -63,6 +55,23 @@ class MeditationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meditation
         fields = "__all__"
+
+
+class GetGPTAnswerRequestSerializer(AsyncSerializer):
+    message = serializers.CharField()
+    chat_id = serializers.UUIDField()
+
+
+class SuggestedMeditationSerializer(AsyncSerializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class GetGPTAnswerResponseSerializer(AsyncSerializer):
+    message = serializers.CharField()
+    suggested_meditations = serializers.ListField(
+        child=SuggestedMeditationSerializer(), allow_empty=True
+    )
 
 
 class MeditationThemeSerializer(serializers.ModelSerializer):

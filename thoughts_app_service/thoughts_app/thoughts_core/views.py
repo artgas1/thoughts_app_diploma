@@ -3,13 +3,13 @@ import os
 
 import openai
 from adrf.views import APIView as AsyncAPIView
+from asgiref.sync import sync_to_async
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.decorators import action
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,7 +30,8 @@ from .models import (
 from .serializers import (
     AchievementSerializer,
     ChatSerializer,
-    GetReplySerializerRequest,
+    GetGPTAnswerRequestSerializer,
+    GetGPTAnswerResponseSerializer,
     MeditationGradeSerializer,
     MeditationNarratorSerializer,
     MeditationProgressSerializer,
@@ -93,30 +94,30 @@ class MeditationViewSet(viewsets.ModelViewSet):
     serializer_class = MeditationSerializer
     queryset = Meditation.objects.all()
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "file": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY
-                ),
-                "name": openapi.Schema(type=openapi.TYPE_STRING),
-                "meditation_theme_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER
-                ),
-                "meditation_narrator_id": openapi.Schema(
-                    type=openapi.TYPE_INTEGER
-                ),
-                "cover_file_name": openapi.Schema(type=openapi.TYPE_STRING),
-            },
-        ),
-        consumes=["multipart/form-data"],
-        responses={
-            200: MeditationSerializer,
-            400: "Bad request",
-            404: "User or Achievement not found",
-        },
-    )
+    # @extend_schema(
+    #     request_body=openapi.Schema(
+    #         type=openapi.TYPE_OBJECT,
+    #         properties={
+    #             "file": openapi.Schema(
+    #                 type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY
+    #             ),
+    #             "name": openapi.Schema(type=openapi.TYPE_STRING),
+    #             "meditation_theme_id": openapi.Schema(
+    #                 type=openapi.TYPE_INTEGER
+    #             ),
+    #             "meditation_narrator_id": openapi.Schema(
+    #                 type=openapi.TYPE_INTEGER
+    #             ),
+    #             "cover_file_name": openapi.Schema(type=openapi.TYPE_STRING),
+    #         },
+    #     ),
+    #     consumes=["multipart/form-data"],
+    #     responses={
+    #         200: MeditationSerializer,
+    #         400: "Bad request",
+    #         404: "User or Achievement not found",
+    #     },
+    # )
     def create(self, request, *args, **kwargs):
         if "file" not in request.data:
             return Response(
@@ -163,9 +164,9 @@ class MeditationViewSet(viewsets.ModelViewSet):
         response = HttpResponse(
             audio_file, content_type="application/octet-stream"
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="audio_file.mp3"'
+        response["Content-Disposition"] = (
+            'attachment; filename="audio_file.mp3"'
+        )
         for key, value in response_data.items():
             response[key] = value
 
@@ -214,8 +215,10 @@ class MeditationNarratorViewSet(viewsets.ModelViewSet):
 
 
 class ManageUserAchievements(APIView):
-    @swagger_auto_schema(
-        request_body=UserAchievementSerializer,
+    serializer_class = UserInfoSerializer
+
+    @extend_schema(
+        request=UserAchievementSerializer,
         responses={
             200: UserInfoSerializer,
             400: "Bad request",
@@ -256,9 +259,9 @@ async def generate_chat_completion(conversation, new_message):
     client = OpenAiClientSingleton().get_client()
     meditations = []
     async for meditation in Meditation.objects.all():
-        meditations.append({"id": meditation.pk, "name": meditation.name})
+        meditation_data = MeditationSerializer(meditation).data
+        meditations.append(meditation_data)
 
-    print(meditations)
     conversation.insert(
         0,
         {
@@ -267,7 +270,7 @@ async def generate_chat_completion(conversation, new_message):
 Ты — виртуальный ассистент, владеющий русским языком и специализирующийся на медитациях. Твоя задача — определить проблемы и чувства пользователя, чтобы подобрать наиболее подходящую медитацию из предложенного списка. При необходимости, ты можешь задать дополнительные вопросы о чувствах пользователя, чтобы уточнить его состояние и на этой основе предложить соответствующую медитацию.
 
 Доступные медитации:
-{meditations}
+{json.dumps(meditations, ensure_ascii=False, indent=2)}
 
 В ответ отправь только JSON, где `message` твой ответ пользователю, а `suggested_meditations` — предлагаемые медитации с их ID и названием.
 """,
@@ -276,6 +279,8 @@ async def generate_chat_completion(conversation, new_message):
 
     conversation.append({"role": "user", "content": new_message})
 
+    print(conversation)
+
     response = await client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=conversation,
@@ -283,12 +288,19 @@ async def generate_chat_completion(conversation, new_message):
 
     gpt_response = response.choices[0].message.content
 
-    try:
-        gpt_response_parsed = json.loads(gpt_response)
-        conversation.append(
-            {"role": "assistant", "content": gpt_response_parsed}
-        )
+    print(gpt_response)
 
+    try:
+        json.loads(gpt_response)
+
+        logger.info(f"Response was parsed successfully.")
+
+        conversation.append(
+            {
+                "role": "assistant",
+                "content": gpt_response,
+            }
+        )
         return conversation[1:]
     except:
         return None
@@ -297,22 +309,32 @@ async def generate_chat_completion(conversation, new_message):
 class ChatBotAPIView(AsyncAPIView):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = GetReplySerializerRequest
+    serializer_class = GetGPTAnswerResponseSerializer
 
-    @swagger_auto_schema(
-        request_body=GetReplySerializerRequest,
+    @extend_schema(
+        request=GetGPTAnswerRequestSerializer,
         responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_STRING,
-                description="Response message",
-            ),
-            400: "Bad request",
-            404: "Chat not found",
-            500: "Internal server error",
+            200: GetGPTAnswerResponseSerializer,
+            400: OpenApiTypes.STR,
+            404: OpenApiTypes.STR,
         },
+        examples=[
+            OpenApiExample(
+                "Example 400",
+                value="Invalid response from GPT",
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Example 404",
+                value="Chat not found",
+                response_only=True,
+                status_codes=["404"],
+            ),
+        ],
     )
     async def post(self, request):
-        serializer = GetReplySerializerRequest(data=request.data)
+        serializer = GetGPTAnswerRequestSerializer(data=request.data)
         if serializer.is_valid():
             new_message = serializer.validated_data.get("message")
             chat_id = serializer.validated_data.get("chat_id")
@@ -331,13 +353,19 @@ class ChatBotAPIView(AsyncAPIView):
             if not updated_conversation:
                 return Response(
                     "Invalid response from GPT",
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             requested_chat.chat_messages = updated_conversation
             await requested_chat.asave()
+            response_serializer = GetGPTAnswerResponseSerializer(
+                data=json.loads(updated_conversation[-1].get("content"))
+            )
+            if response_serializer.is_valid():
+                return Response(
+                    response_serializer.data, status=status.HTTP_200_OK
+                )
             return Response(
-                updated_conversation[-1].get("content"),
-                status=status.HTTP_200_OK,
+                response_serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
         else:
             return Response(
@@ -362,8 +390,9 @@ class ChatViewSet(
 class RecommendMeditationsApiView(APIView):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = MeditationSerializer(many=True)
 
-    @swagger_auto_schema(
+    @extend_schema(
         responses={200: MeditationSerializer(many=True), 400: "Bad request"},
     )
     def get(self, request):
@@ -380,8 +409,10 @@ class RecommendMeditationsApiView(APIView):
 
 
 class UserRegistrationView(APIView):
-    @swagger_auto_schema(
-        request_body=UserRegistrationSerializer,
+    serializer_class = UserRegistrationSerializer
+
+    @extend_schema(
+        request=UserRegistrationSerializer,
         responses={200: UserRegistrationSerializer, 400: "Bad request"},
     )
     def post(self, request):
@@ -399,7 +430,7 @@ class MeditationProgressView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MeditationProgressSerializer
 
-    @swagger_auto_schema(
+    @extend_schema(
         responses={
             200: MeditationProgressSerializer,
             400: "Bad request",

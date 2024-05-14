@@ -18,22 +18,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from .views import DecoratedTokenObtainPairView, DecoratedTokenRefreshView
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Thoughts App API",
-        default_version="v1",
-        description="API documentation",
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-
 
 urlpatterns = [
     path("admin/", admin.site.urls),
