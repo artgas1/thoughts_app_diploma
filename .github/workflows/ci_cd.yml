@@ -90,7 +90,7 @@ jobs:
           ssh ${USER}@${HOST} "mkdir -p ~/ThoughtsApp"
           scp -r thoughts_app_service ${USER}@${HOST}:~/ThoughtsApp
           scp $(ls | grep -v 'thoughts_app_service') ${USER}@${HOST}:~/ThoughtsApp
-          ssh${USER}@${HOST} "cd ~/ThoughtsApp && docker compose down && docker compose up -d --build"
+          ssh ${USER}@${HOST} "cd ~/ThoughtsApp && docker compose down && docker compose up -d --build"
         env:
           USER: ${{ secrets.SERVER_USER }}
           HOST: ${{ secrets.SERVER_IP }}
