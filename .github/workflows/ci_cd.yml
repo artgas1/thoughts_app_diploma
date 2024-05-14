@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r thoughts_app_service/requirements.txt
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        flake8 thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        cd thoughts_app_service
+        pytest
+
+    deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker image
+      run: docker build -t thoughts_app_service -f thoughts_app_service/Dockerfile .
+    - name: Prepare environment file
+      run: |
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+        echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+        # Add other necessary environment variables
+    - name: Deploy to VPS
+      run: |
+        scp -o StrictHostKeyChecking=no docker-compose.yml ${USER}@${HOST}:/path/to/project
+        scp -o StrictHostKeyChecking=no .env ${USER}@${HOST}:/path/to/project
+        scp -o StrictHostKeyChecking=no thoughts_app_service/Dockerfile ${USER}@${HOST}:/path/to/project/thoughts_app_service
+        ssh -o StrictHostKeyChecking=no ${USER}@${HOST} "cd /path/to/project && docker-compose down && docker-compose up -d --build"
+      env:
+        USER: ${{ secrets.SERVER_SSH_USER }}
+        HOST: ${{ secrets.SERVER_IP }}
