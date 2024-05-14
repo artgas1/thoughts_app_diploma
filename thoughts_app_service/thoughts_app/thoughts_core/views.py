@@ -164,9 +164,9 @@ class MeditationViewSet(viewsets.ModelViewSet):
         response = HttpResponse(
             audio_file, content_type="application/octet-stream"
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="audio_file.mp3"'
+        response["Content-Disposition"] = (
+            'attachment; filename="audio_file.mp3"'
+        )
         for key, value in response_data.items():
             response[key] = value
 
