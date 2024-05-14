@@ -24,15 +24,14 @@ jobs:
       - name: Lint with Black
         run: |
           pip install black
-          black --check thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
+          black --check thoughts_app_service/thoughts_app
       - name: Lint with isort
         run: |
           pip install isort
-          isort --check-only thoughts_app_service/thoughts_app thoughts_app_service/thoughts_core
+          isort --check-only thoughts_app_service/thoughts_app
       - name: Run Django tests
         run: |
-          cd thoughts_app_service
-          python manage.py test
+          python thoughts_app_service/thoughts_app/manage.py test thoughts_core thoughts_app
 
   deploy:
     needs: build-and-test
