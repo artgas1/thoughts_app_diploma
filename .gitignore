@@ -269,3 +269,5 @@ pyrightconfig.json
 .DS_Store
 
 .vscode
+
+tree_files.sh

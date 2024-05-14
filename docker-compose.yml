@@ -9,6 +9,8 @@ services:
       - 8000:8000
     depends_on:
       - postgres_db
+    environment:
+      RUNNING_IN_DOCKER: "True"
 
   postgres_db:
     image: postgres:13

@@ -1,10 +1,7 @@
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-from asgiref.sync import async_to_sync, sync_to_async
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -81,7 +78,9 @@ class AuthenticationTest(TestCase):
 
     def test_user_using_jwt(self):
         token = RefreshToken.for_user(self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {token.access_token}"
+        )
         response = self.client.get("/api/meditation/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -103,7 +102,9 @@ class ChatViewSetTest(TestCase):
         self.another_user.delete()
 
     def test_create_chat(self):
-        response = self.client.post("/api/chat/", self.chat_data, format="json")
+        response = self.client.post(
+            "/api/chat/", self.chat_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Chat.objects.count(), 1)
         self.assertEqual(Chat.objects.get().user, self.user)
@@ -154,7 +155,9 @@ class MeditationProgressViewTest(TestCase):
         )  # Now the Meditation model is defined
         self.meditations_sessions = MeditationSession.objects.bulk_create(
             [
-                MeditationSession(user=self.user, meditation=Meditation.objects.first())
+                MeditationSession(
+                    user=self.user, meditation=Meditation.objects.first()
+                )
                 for _ in range(3)
             ]
         )
@@ -194,7 +197,9 @@ class MeditationProgressViewTest(TestCase):
 
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {"detail": "Failed to get progress data."})
+        self.assertEqual(
+            response.data, {"detail": "Failed to get progress data."}
+        )
 
     def test_authentication_required(self):
         self.client.force_authenticate(user=None)  # No user authenticated
@@ -208,9 +213,7 @@ class RecommendMeditationsApiViewTest(TestCase):
         self.user = User.objects.create_user(
             username="testuser", password="testpassword123"
         )
-        self.url = (
-            "/api/meditation/recommend_meditations/"  # Update with the actual URL
-        )
+        self.url = "/api/meditation/recommend_meditations/"  # Update with the actual URL
         self.client.force_authenticate(user=self.user)
 
     def tearDown(self):

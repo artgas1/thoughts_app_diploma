@@ -1,6 +1,6 @@
 from adrf.serializers import Serializer as AsyncSerializer
-from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_serializer
+from rest_framework import serializers
 
 from .models import (
     Achievement,

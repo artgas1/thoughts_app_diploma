@@ -150,10 +150,17 @@ DATABASES = {
     }
 }
 
-if (
-    "test" in sys.argv or "test_coverage" in sys.argv or "pytest" in sys.argv
-):  # 'test_coverage' might be used with coverage.py
-    DATABASES["default"]["HOST"] = "localhost"
+if os.getenv("RUNNING_IN_DOCKER"):
+    DATABASES["default"]["HOST"] = "postgres_db"
+else:
+    if (
+        "test" in sys.argv
+        or "test_coverage" in sys.argv
+        or "pytest" in sys.argv
+    ):
+        DATABASES["default"]["HOST"] = "localhost"
+    else:
+        DATABASES["default"]["HOST"] = os.getenv("DB_HOST", "postgres_db")
 
 
 # Password validation
