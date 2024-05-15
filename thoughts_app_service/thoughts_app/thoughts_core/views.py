@@ -3,7 +3,6 @@ import os
 
 import openai
 from adrf.views import APIView as AsyncAPIView
-from asgiref.sync import sync_to_async
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -255,18 +254,20 @@ class ManageUserAchievements(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-async def generate_chat_completion(conversation, new_message):
-    client = OpenAiClientSingleton().get_client()
+async def get_all_meditations():
+    """Retrieve all meditations and serialize them."""
     meditations = []
     async for meditation in Meditation.objects.all():
         meditation_data = MeditationSerializer(meditation).data
         meditations.append(meditation_data)
+    return meditations
 
-    conversation.insert(
-        0,
-        {
-            "role": "system",
-            "content": f"""
+
+def prepare_system_message(meditations):
+    """Prepare the system message for the conversation."""
+    return {
+        "role": "system",
+        "content": f"""
 Ты — виртуальный ассистент, владеющий русским языком и специализирующийся на медитациях. Твоя задача — определить проблемы и чувства пользователя, чтобы подобрать наиболее подходящую медитацию из предложенного списка. При необходимости, ты можешь задать дополнительные вопросы о чувствах пользователя, чтобы уточнить его состояние и на этой основе предложить соответствующую медитацию.
 
 Доступные медитации:
@@ -274,35 +275,35 @@ async def generate_chat_completion(conversation, new_message):
 
 В ответ отправь только JSON, где `message` твой ответ пользователю, а `suggested_meditations` — предлагаемые медитации с их ID и названием.
 """,
-        },
-    )
+    }
 
+
+async def generate_chat_completion(conversation, new_message):
+    client = OpenAiClientSingleton().get_client()
+
+    meditations = await get_all_meditations()
+    system_message = prepare_system_message(meditations)
+
+    conversation.insert(0, system_message)
     conversation.append({"role": "user", "content": new_message})
 
-    print(conversation)
-
-    response = await client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=conversation,
-    )
-
-    gpt_response = response.choices[0].message.content
-
-    print(gpt_response)
-
     try:
-        json.loads(gpt_response)
-
-        logger.info(f"Response was parsed successfully.")
-
-        conversation.append(
-            {
-                "role": "assistant",
-                "content": gpt_response,
-            }
+        response = await client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=conversation,
         )
+        gpt_response = response.choices[0].message.content
+        logger.debug(f"GPT Response: {gpt_response}")
+
+        json.loads(gpt_response)  # Validate JSON format
+
+        conversation.append({"role": "assistant", "content": gpt_response})
         return conversation[1:]
-    except:
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse GPT response as JSON: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error during GPT chat completion: {e}")
         return None
 
 
@@ -335,42 +336,47 @@ class ChatBotAPIView(AsyncAPIView):
     )
     async def post(self, request):
         serializer = GetGPTAnswerRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            new_message = serializer.validated_data.get("message")
-            chat_id = serializer.validated_data.get("chat_id")
-            try:
-                requested_chat = await Chat.objects.aget(
-                    user=request.user, id=chat_id
-                )
-            except ObjectDoesNotExist:
-                return Response(
-                    "Chat not found", status=status.HTTP_404_NOT_FOUND
-                )
-            conversation = requested_chat.chat_messages
-            updated_conversation = await generate_chat_completion(
-                conversation, new_message
-            )
-            if not updated_conversation:
-                return Response(
-                    "Invalid response from GPT",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            requested_chat.chat_messages = updated_conversation
-            await requested_chat.asave()
-            response_serializer = GetGPTAnswerResponseSerializer(
-                data=json.loads(updated_conversation[-1].get("content"))
-            )
-            if response_serializer.is_valid():
-                return Response(
-                    response_serializer.data, status=status.HTTP_200_OK
-                )
-            return Response(
-                response_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        else:
+        if not serializer.is_valid():
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
+
+        new_message = serializer.validated_data.get("message")
+        chat_id = serializer.validated_data.get("chat_id")
+
+        try:
+            requested_chat = await Chat.objects.aget(
+                user=request.user, id=chat_id
+            )
+        except ObjectDoesNotExist:
+            return Response("Chat not found", status=status.HTTP_404_NOT_FOUND)
+
+        conversation = requested_chat.chat_messages
+        updated_conversation = await generate_chat_completion(
+            conversation, new_message
+        )
+
+        if not updated_conversation:
+            return Response(
+                "Invalid response from GPT", status=status.HTTP_400_BAD_REQUEST
+            )
+
+        requested_chat.chat_messages = updated_conversation
+        await requested_chat.asave()
+
+        response_data = json.loads(updated_conversation[-1].get("content"))
+        response_serializer = GetGPTAnswerResponseSerializer(
+            data=response_data
+        )
+
+        if response_serializer.is_valid():
+            return Response(
+                response_serializer.data, status=status.HTTP_200_OK
+            )
+
+        return Response(
+            response_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class ChatViewSet(

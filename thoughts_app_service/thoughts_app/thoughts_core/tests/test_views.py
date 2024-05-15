@@ -1,5 +1,7 @@
+import json
 import logging
-from unittest.mock import patch
+import unittest
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -8,6 +10,11 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 from thoughts_core.models import Chat
+from thoughts_core.views import (
+    generate_chat_completion,
+    get_all_meditations,
+    prepare_system_message,
+)
 
 from ..models import (
     Meditation,
@@ -261,3 +268,229 @@ class RecommendMeditationsApiViewTest(TestCase):
         self.client.force_authenticate(user=None)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class UtilityFunctionTests(unittest.IsolatedAsyncioTestCase):
+
+    @patch("thoughts_core.views.Meditation.objects.all")
+    @patch("thoughts_core.views.MeditationSerializer")
+    async def test_get_all_meditations(
+        self, mock_serializer, mock_meditation_objects_all
+    ):
+        # Setup mock data
+        mock_meditation = MagicMock()
+        mock_meditation_objects_all.return_value = self._async_iter(
+            [mock_meditation]
+        )
+        mock_serializer_instance = mock_serializer.return_value
+        mock_serializer_instance.data = {"id": 1, "title": "Meditation 1"}
+
+        # Call the function
+        result = await get_all_meditations()
+
+        # Assertions
+        self.assertEqual(result, [{"id": 1, "title": "Meditation 1"}])
+        mock_meditation_objects_all.assert_called_once()
+        mock_serializer.assert_called_once_with(mock_meditation)
+
+    def test_prepare_system_message(self):
+        meditations = [{"id": 1, "title": "Meditation 1"}]
+        expected_message_content = f"""
+Ты — виртуальный ассистент, владеющий русским языком и специализирующийся на медитациях. Твоя задача — определить проблемы и чувства пользователя, чтобы подобрать наиболее подходящую медитацию из предложенного списка. При необходимости, ты можешь задать дополнительные вопросы о чувствах пользователя, чтобы уточнить его состояние и на этой основе предложить соответствующую медитацию.
+
+Доступные медитации:
+{json.dumps(meditations, ensure_ascii=False, indent=2)}
+
+В ответ отправь только JSON, где `message` твой ответ пользователю, а `suggested_meditations` — предлагаемые медитации с их ID и названием.
+"""
+        expected_result = {
+            "role": "system",
+            "content": expected_message_content,
+        }
+
+        # Call the function
+        result = prepare_system_message(meditations)
+
+        # Assertions
+        self.assertEqual(result, expected_result)
+
+    def _async_iter(self, items):
+        async def async_generator():
+            for item in items:
+                yield item
+
+        return async_generator()
+
+
+class GenerateChatCompletionTests(unittest.IsolatedAsyncioTestCase):
+
+    @patch("thoughts_core.views.OpenAiClientSingleton")
+    @patch("thoughts_core.views.get_all_meditations", new_callable=AsyncMock)
+    @patch("thoughts_core.views.prepare_system_message")
+    async def test_generate_chat_completion_valid(
+        self,
+        mock_prepare_system_message,
+        mock_get_all_meditations,
+        mock_openai_client,
+    ):
+        mock_get_all_meditations.return_value = [
+            {"id": 1, "title": "Meditation 1"}
+        ]
+        mock_prepare_system_message.return_value = {
+            "role": "system",
+            "content": "system message content",
+        }
+
+        mock_create = AsyncMock()
+        mock_create.return_value.choices = [AsyncMock()]
+        mock_create.return_value.choices[0].message.content = (
+            '{"message": "Hello", "suggested_meditations": [{"id": 1, "title": "Meditation 1"}]}'
+        )
+        mock_openai_client.return_value.get_client.return_value.chat.completions.create = (
+            mock_create
+        )
+
+        conversation = []
+        new_message = "Hello"
+        updated_conversation = await generate_chat_completion(
+            conversation, new_message
+        )
+
+        self.assertIsNotNone(updated_conversation)
+        self.assertEqual(updated_conversation[-1]["role"], "assistant")
+        self.assertIn("content", updated_conversation[-1])
+
+    @patch("thoughts_core.views.OpenAiClientSingleton")
+    @patch("thoughts_core.views.get_all_meditations", new_callable=AsyncMock)
+    @patch("thoughts_core.views.prepare_system_message")
+    async def test_generate_chat_completion_invalid_json(
+        self,
+        mock_prepare_system_message,
+        mock_get_all_meditations,
+        mock_openai_client,
+    ):
+        mock_get_all_meditations.return_value = [
+            {"id": 1, "title": "Meditation 1"}
+        ]
+        mock_prepare_system_message.return_value = {
+            "role": "system",
+            "content": "system message content",
+        }
+
+        mock_create = AsyncMock()
+        mock_create.return_value.choices = [AsyncMock()]
+        mock_create.return_value.choices[0].message.content = "invalid json"
+        mock_openai_client.return_value.get_client.return_value.chat.completions.create = (
+            mock_create
+        )
+
+        conversation = []
+        new_message = "Hello"
+        updated_conversation = await generate_chat_completion(
+            conversation, new_message
+        )
+
+        self.assertIsNone(updated_conversation)
+
+    @patch("thoughts_core.views.OpenAiClientSingleton")
+    @patch("thoughts_core.views.get_all_meditations", new_callable=AsyncMock)
+    @patch("thoughts_core.views.prepare_system_message")
+    async def test_generate_chat_completion_api_error(
+        self,
+        mock_prepare_system_message,
+        mock_get_all_meditations,
+        mock_openai_client,
+    ):
+        mock_get_all_meditations.return_value = [
+            {"id": 1, "title": "Meditation 1"}
+        ]
+        mock_prepare_system_message.return_value = {
+            "role": "system",
+            "content": "system message content",
+        }
+
+        mock_create = AsyncMock()
+        mock_create.side_effect = Exception("API error")
+        mock_openai_client.return_value.get_client.return_value.chat.completions.create = (
+            mock_create
+        )
+
+        conversation = []
+        new_message = "Hello"
+        updated_conversation = await generate_chat_completion(
+            conversation, new_message
+        )
+
+        self.assertIsNone(updated_conversation)
+
+
+class ChatBotAPIViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="password"
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        self.chat = Chat.objects.create(user=self.user, chat_messages=[])
+        self.url = "/api/chatbot/"  # Update this to match your actual URL pattern name
+
+    @patch(
+        "thoughts_core.views.generate_chat_completion", new_callable=AsyncMock
+    )
+    def test_valid_request(self, mock_generate_chat_completion):
+        response_content = {
+            "message": "Привет! Вот рекомендованные медитации",
+            "suggested_meditations": [{"id": 0, "name": "Meditation 1"}],
+        }
+        mock_generate_chat_completion.return_value = [
+            {"content": json.dumps(response_content)}
+        ]
+        data = {"message": "Hello", "chat_id": self.chat.id}
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, response_content)
+
+    def test_invalid_request_data(self):
+        data = {"message": "", "chat_id": self.chat.id}
+
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_chat_not_found(self):
+        data = {"message": "Hello", "chat_id": 999}
+
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data, "Chat not found")
+
+    @patch(
+        "thoughts_core.views.generate_chat_completion", new_callable=AsyncMock
+    )
+    def test_invalid_gpt_response(self, mock_generate_chat_completion):
+        mock_generate_chat_completion.return_value = None
+        data = {"message": "Hello", "chat_id": self.chat.id}
+
+        response = self.client.post(self.url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, "Invalid response from GPT")
+
+    @patch(
+        "thoughts_core.views.generate_chat_completion", new_callable=AsyncMock
+    )
+    def test_invalid_response_serializer(self, mock_generate_chat_completion):
+        # Mock the generate_chat_completion to return a valid conversation
+        response_content = {
+            "message": "Invalid response",
+        }
+        mock_generate_chat_completion.return_value = [
+            {"role": "assistant", "content": json.dumps(response_content)}
+        ]
+
+        data = {"message": "Hello", "chat_id": self.chat.id}
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "ErrorDetail", str(response.data)
+        )  # Check if the response contains errors
