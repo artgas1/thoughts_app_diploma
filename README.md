@@ -73,4 +73,4 @@ Contributions to the Thoughts App are welcome! Please refer to the contributing 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
-- Thanks to everyone who has contributed to this project!
+- Thanks to everyone who has contributed to this project!!!
