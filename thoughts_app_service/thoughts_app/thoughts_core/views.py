@@ -95,41 +95,44 @@ class MeditationViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         request={
-            'multipart/form-data': {
-                'type': 'object',
-                'properties': {
-                    'file': {
-                        'type': 'string',
-                        'format': 'binary',
-                        'example': 'example.pdf',
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "example": "example.pdf",
                     },
-                    'name': {
-                        'type': 'string',
-                        'example': 'Guided Meditation',
+                    "name": {
+                        "type": "string",
+                        "example": "Guided Meditation",
                     },
-                    'meditation_theme_id': {
-                        'type': 'integer',
-                        'example': 1,
+                    "meditation_theme_id": {
+                        "type": "integer",
+                        "example": 1,
                     },
-                    'meditation_narrator_id': {
-                        'type': 'integer',
-                        'example': 2,
+                    "meditation_narrator_id": {
+                        "type": "integer",
+                        "example": 2,
                     },
-                    'audio_file_url': {
-                        'type': 'string',
-                        'format': 'uri',
-                        'example': 'http://example.com/audio.mp3',
+                    "audio_file_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "http://example.com/audio.mp3",
                     },
-                    'cover_file_url': {
-                        'type': 'string',
-                        'format': 'uri',
-                        'example': 'http://example.com/cover.jpg',
+                    "cover_file_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "http://example.com/cover.jpg",
                     },
                 },
-                'required': [
-                    'file', 'name', 'meditation_theme_id', 
-                    'meditation_narrator_id', 'audio_file_url', 
-                    'cover_file_url'
+                "required": [
+                    "file",
+                    "name",
+                    "meditation_theme_id",
+                    "meditation_narrator_id",
+                    "audio_file_url",
+                    "cover_file_url",
                 ],
             }
         },
