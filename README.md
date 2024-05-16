@@ -1,45 +1,76 @@
-# thoughts_app
+# Thoughts App
 
-# ThoughtsApp
+## Description
+Thoughts App is a web-based platform designed to capture and share user thoughts. It provides an intuitive interface for users to post, edit, and manage their thoughts over time. This application is built using Python, Docker, and PostgreSQL, featuring a robust API and a responsive front-end.
 
-This is the documentation for deploying and working with the ThoughtsApp project.
+## Features
+- Post thoughts with a title and content
+- Edit existing thoughts
+- List all thoughts in a timeline
+- Dockerized environment for easy setup and deployment
 
-## Deployment
+## Technology Stack
+- **Back-end**: Python with FastAPI
+- **Database**: PostgreSQL
+- **Containerization**: Docker and Docker Compose
+- **Monitoring**: Prometheus
 
-To deploy the ThoughtsApp project, follow these steps:
+## Getting Started
 
-1. Start the app by running the following command:
+### Prerequisites
+- Docker
+- Docker Compose
+- git (optional, for cloning the repository)
 
-    ```bash
-    docker-compose up -d --build
-    ```
+### Installation
+
+1. **Clone the Repository (Optional)**
+   ```bash
+   git clone https://github.com/artgas1/thoughts_app_diploma.git
+   cd thoughts_app_diploma
+   ```
+
+2. **Set Up the Environment**
+   ```bash
+   # Install Docker and Docker Compose if not already installed
+   ./install_docker.sh
+
+   # Set up the PostgreSQL database volume
+   ./clear_postgres_volume.sh
+   ```
+
+3. **Run the Application**
+   ```bash
+   docker-compose up -d
+   ```
+
+### Accessing the Application
+- The web interface can be accessed at `http://localhost:8000`
+- API documentation is available at `http://localhost:8000/docs`
 
 ## Development
 
-### Making Migrations
+### Building the Application
+- To build the Docker container manually:
+  ```bash
+  docker-compose build
+  ```
 
-To make migrations in the ThoughtsApp project, follow these steps:
+### Running Tests
+- Execute tests by running:
+  ```bash
+  docker-compose run --rm web python thoughts_app/manage.py test thoughts_core thoughts_app
+  ```
 
-1. Open a terminal or command prompt.
-2. Start the project via Docker using the command below:
-    ```bash
-    docker-compose up -d --build
-    ```
+## Configuration
+- **Docker configurations**: Adjust `docker-compose.yml` for Docker settings.
+- **Prometheus monitoring**: Modify `prometheus.yml` to configure monitoring settings.
 
-3. Set the `DB_HOST` environment variable to `localhost` by running the following command:
-    ```bash
-    export DB_HOST=localhost
-    ```
-   This is necessary to run `makemigrations` on your local PostgreSQL.
+## Contributing
+Contributions to the Thoughts App are welcome! Please refer to the contributing guidelines for more details.
 
-4. Navigate to the root directory of the project.
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-5. Run the following command to create a new migration:
-    ```bash
-    python manage.py makemigrations
-    ```
-
-6. It will generate a new migration file in the migrations folder. After the container is up, the changes will be applied to the database by running:
-    ```bash
-    python manage.py migrate
-    ```
+## Acknowledgments
+- Thanks to everyone who has contributed to this project!
