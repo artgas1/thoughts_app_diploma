@@ -12,7 +12,7 @@ To deploy the ThoughtsApp project, follow these steps:
 
     ```bash
     docker-compose up -d --build
-
+    ```
 
 ## Development
 

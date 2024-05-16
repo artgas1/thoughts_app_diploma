@@ -93,30 +93,66 @@ class MeditationViewSet(viewsets.ModelViewSet):
     serializer_class = MeditationSerializer
     queryset = Meditation.objects.all()
 
-    # @extend_schema(
-    #     request_body=openapi.Schema(
-    #         type=openapi.TYPE_OBJECT,
-    #         properties={
-    #             "file": openapi.Schema(
-    #                 type=openapi.TYPE_STRING, format=openapi.FORMAT_BINARY
-    #             ),
-    #             "name": openapi.Schema(type=openapi.TYPE_STRING),
-    #             "meditation_theme_id": openapi.Schema(
-    #                 type=openapi.TYPE_INTEGER
-    #             ),
-    #             "meditation_narrator_id": openapi.Schema(
-    #                 type=openapi.TYPE_INTEGER
-    #             ),
-    #             "cover_file_name": openapi.Schema(type=openapi.TYPE_STRING),
-    #         },
-    #     ),
-    #     consumes=["multipart/form-data"],
-    #     responses={
-    #         200: MeditationSerializer,
-    #         400: "Bad request",
-    #         404: "User or Achievement not found",
-    #     },
-    # )
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'example': 'example.pdf',
+                    },
+                    'name': {
+                        'type': 'string',
+                        'example': 'Guided Meditation',
+                    },
+                    'meditation_theme_id': {
+                        'type': 'integer',
+                        'example': 1,
+                    },
+                    'meditation_narrator_id': {
+                        'type': 'integer',
+                        'example': 2,
+                    },
+                    'audio_file_url': {
+                        'type': 'string',
+                        'format': 'uri',
+                        'example': 'http://example.com/audio.mp3',
+                    },
+                    'cover_file_url': {
+                        'type': 'string',
+                        'format': 'uri',
+                        'example': 'http://example.com/cover.jpg',
+                    },
+                },
+                'required': [
+                    'file', 'name', 'meditation_theme_id', 
+                    'meditation_narrator_id', 'audio_file_url', 
+                    'cover_file_url'
+                ],
+            }
+        },
+        responses={
+            200: MeditationSerializer,
+            400: OpenApiTypes.OBJECT,  # Use a more specific structure if needed
+            404: OpenApiTypes.OBJECT,  # Use a more specific structure if needed
+        },
+        examples=[
+            OpenApiExample(
+                "Example 400",
+                value={"error": "Bad request"},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Example 404",
+                value={"error": "User or Achievement not found"},
+                response_only=True,
+                status_codes=["404"],
+            ),
+        ],
+    )
     def create(self, request, *args, **kwargs):
         if "file" not in request.data:
             return Response(
@@ -130,8 +166,8 @@ class MeditationViewSet(viewsets.ModelViewSet):
             "meditation_narrator_id": request.data.get(
                 "meditation_narrator_id"
             ),
-            "audio_file_name": "default_file_name",
-            "cover_file_name": request.data.get("cover_file_name"),
+            "audio_file_url": request.data.get("audio_file_url"),
+            "cover_file_url": request.data.get("cover_file_url"),
         }
 
         serializer = MeditationSerializer(data=meditation_data)
@@ -156,8 +192,8 @@ class MeditationViewSet(viewsets.ModelViewSet):
             "name": instance.name,
             "meditation_theme_id": instance.meditation_theme_id,
             "meditation_narrator_id": instance.meditation_narrator_id,
-            "audio_file_name": instance.audio_file_name,
-            "cover_file_name": instance.cover_file_name,
+            "audio_file_url": instance.audio_file_name,
+            "cover_file_url": instance.cover_file_name,
         }
 
         response = HttpResponse(
