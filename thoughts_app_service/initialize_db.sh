@@ -12,7 +12,7 @@ echo "${GREEN}Running Django database migrations...${NC}"
 python ./thoughts_app/manage.py migrate
 
 # Wait for PostgreSQL to be ready
-until PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -U "$DB_USER" -c '\q'; do
+until PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c '\q'; do
   >&2 echo "${YELLOW}Postgres is unavailable - sleeping${NC}"
   sleep 1
 done
