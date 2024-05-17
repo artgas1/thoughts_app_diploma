@@ -43,7 +43,6 @@ jobs:
           echo "POSTGRES_DB=${{ secrets.DB_NAME }}" >> thoughts_app_service/.env
           echo "POSTGRES_USER=${{ secrets.DB_USER }}" >> thoughts_app_service/.env
           echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> thoughts_app_service/.env
-          cat thoughts_app_service/.env
       - name: Prepare Docker Compose
         run: |
           docker build -t thoughts_app_service -f thoughts_app_service/Dockerfile thoughts_app_service/
