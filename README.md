@@ -66,6 +66,21 @@ Thoughts App is a web-based platform designed to capture and share user thoughts
 - **Docker configurations**: Adjust `docker-compose.yml` for Docker settings.
 - **Prometheus monitoring**: Modify `prometheus.yml` to configure monitoring settings.
 
+## Setting Up Secrets in GitHub
+Before you begin working with CI/CD, you need to set up secrets in your GitHub repository to ensure security and environment configuration. Follow these steps:
+
+Go to your repository on GitHub.
+Find the "Settings" section, then go to "Secrets" and select "Actions".
+Add the following secrets that will be used in your CI/CD process:
+- **DJANGO_SECRET_KEY**: The secret key for your Django application.
+- **DJANGO_DEBUG**: Debug parameter (true or false).
+- **DJANGO_ALLOWED_HOSTS**: Allowed hosts.
+- **DB_HOST**, **DB_NAME**, **DB_USER**, **DB_PASSWORD**, **DB_PORT**: Parameters for database connection.
+- **OPENAI_API_KEY**: API key for OpenAI services, if used.
+- **SERVER_IP**: IP address of your server.
+- **SERVER_USER**: Username for SSH access.
+- **SERVER_SSH_PRIVATE_KEY**: Private SSH key for server access.
+
 ## Contributing
 Contributions to the Thoughts App are welcome! Please refer to the contributing guidelines for more details.
 
