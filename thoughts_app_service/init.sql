@@ -6,9 +6,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM auth_user) THEN
         INSERT INTO auth_user (first_name, last_name, username, email, password, is_staff, is_superuser, is_active, date_joined)
         VALUES
-        ('', '', 'admin', 'admin@admin.admin', 'pbkdf2_sha256$720000$FSKT5OljZen5IPAzo7MiXA$g6VH4ofoQnIMiJAoGFIWXGphkuUoMgWgSfKJAKc1ZpI=', true, true, true, '2024-03-29 09:26:39.796'),
-        ('', '', 'john_doe', 'john.doe@example.com', 'pbkdf2_sha256$720000$FSKT5OljZen5IPAzo7MiXA$g6VH4ofoQnIMiJAoGFIWXGphkuUoMgWgSfKJAKc1ZpI=', false, false, true, '2023-05-09'),
-        ('', '', 'jane_doe', 'jane.doe@example.com', 'pbkdf2_sha256$720000$FSKT5OljZen5IPAzo7MiXA$g6VH4ofoQnIMiJAoGFIWXGphkuUoMgWgSfKJAKc1ZpI=', false, false, true, '2023-05-09');
+        ('', '', 'admin', 'admin@admin.admin', 'pbkdf2_sha256$720000$y6IHiAiyjOTFrlI8fcosdj$MJN1LcX5C/DJByBX083Jol+3PXDW7Vj3B2HyxdAhYRk=', true, true, true, '2024-03-29 09:26:39.796'),
+        ('', '', 'john_doe', 'john.doe@example.com', '---', false, false, true, '2023-05-09'),
+        ('', '', 'jane_doe', 'jane.doe@example.com', '---', false, false, true, '2023-05-09');
     END IF;
 
     -- Insert sample data into Achievement table
