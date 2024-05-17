@@ -86,129 +86,27 @@ class AchievementViewSet(viewsets.ModelViewSet):
     queryset = Achievement.objects.all()
 
 
-class MeditationViewSet(viewsets.ModelViewSet):
+class MeditationViewSet(
+    mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
+):
     authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     serializer_class = MeditationSerializer
     queryset = Meditation.objects.all()
 
-    @extend_schema(
-        request={
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "file": {
-                        "type": "string",
-                        "format": "binary",
-                        "example": "example.pdf",
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Guided Meditation",
-                    },
-                    "meditation_theme_id": {
-                        "type": "integer",
-                        "example": 1,
-                    },
-                    "meditation_narrator_id": {
-                        "type": "integer",
-                        "example": 2,
-                    },
-                    "audio_file_url": {
-                        "type": "string",
-                        "format": "uri",
-                        "example": "http://example.com/audio.mp3",
-                    },
-                    "cover_file_url": {
-                        "type": "string",
-                        "format": "uri",
-                        "example": "http://example.com/cover.jpg",
-                    },
-                },
-                "required": [
-                    "file",
-                    "name",
-                    "meditation_theme_id",
-                    "meditation_narrator_id",
-                    "audio_file_url",
-                    "cover_file_url",
-                ],
-            }
-        },
-        responses={
-            200: MeditationSerializer,
-            400: OpenApiTypes.OBJECT,  # Use a more specific structure if needed
-            404: OpenApiTypes.OBJECT,  # Use a more specific structure if needed
-        },
-        examples=[
-            OpenApiExample(
-                "Example 400",
-                value={"error": "Bad request"},
-                response_only=True,
-                status_codes=["400"],
-            ),
-            OpenApiExample(
-                "Example 404",
-                value={"error": "User or Achievement not found"},
-                response_only=True,
-                status_codes=["404"],
-            ),
-        ],
-    )
-    def create(self, request, *args, **kwargs):
-        if "file" not in request.data:
-            return Response(
-                {"error": "No file provided"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        meditation_data = {
-            "name": request.data.get("name"),
-            "meditation_theme_id": request.data.get("meditation_theme_id"),
-            "meditation_narrator_id": request.data.get(
-                "meditation_narrator_id"
-            ),
-            "audio_file_url": request.data.get("audio_file_url"),
-            "cover_file_url": request.data.get("cover_file_url"),
-        }
-
-        serializer = MeditationSerializer(data=meditation_data)
-        if serializer.is_valid():
-            serializer.save()
-            uploaded_file = request.data["file"]
-
-            new_file_name = str(serializer.instance.id) + "_meditation"
-            uploaded_file.name = new_file_name
-            S3Service.upload_file(upload_file=uploaded_file)
-            serializer.instance.audio_file_name = new_file_name
-            serializer.instance.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-
-        audio_file = S3Service.get_file(key=instance.audio_file_name)
 
         response_data = {
             "name": instance.name,
             "meditation_theme_id": instance.meditation_theme_id,
             "meditation_narrator_id": instance.meditation_narrator_id,
-            "audio_file_url": instance.audio_file_name,
-            "cover_file_url": instance.cover_file_name,
+            "audio_file_url": instance.audio_file_url,
+            "cover_file_url": instance.cover_file_url,
         }
 
-        response = HttpResponse(
-            audio_file, content_type="application/octet-stream"
-        )
-        response["Content-Disposition"] = (
-            'attachment; filename="audio_file.mp3"'
-        )
-        for key, value in response_data.items():
-            response[key] = value
-
-        return response
+        return Response(response_data)
 
 
 class MeditationThemeViewSet(viewsets.ModelViewSet):
